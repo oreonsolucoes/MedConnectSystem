@@ -14,15 +14,27 @@ import {
 } from "./modules/cadastros.js";
 
 /* ---------------- Rotas + permissões ---------------- */
+/* Ícones Lucide SVG — profissionais e consistentes */
+const ICO = {
+  dashboard:    `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
+  romaneio:     `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`,
+  locacoes:     `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+  clientes:     `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  equipamentos: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="1"/></svg>`,
+  motoristas:   `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M8.5 14.5A5 5 0 0 0 12 16a5 5 0 0 0 3.5-1.5"/><circle cx="9" cy="11" r="1" fill="currentColor"/><circle cx="15" cy="11" r="1" fill="currentColor"/></svg>`,
+  fornecedores: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+  financeiro:   `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`
+};
+
 const ROUTES = {
-  dashboard:    { titulo:"Dashboard",    ico:"📊", perfis:["admin"],             render:(v)=>Dashboard.render(v) },
-  romaneio:     { titulo:"Romaneio",     ico:"🚚", perfis:["admin","motorista"], render:(v,u)=>Romaneio.render(v,u) },
-  locacoes:     { titulo:"Locações",     ico:"📅", perfis:["admin"],             render:(v)=>Locacoes.render(v) },
-  clientes:     { titulo:"Clientes",     ico:"👥", perfis:["admin"],             render:(v)=>renderClientes(v) },
-  equipamentos: { titulo:"Equipamentos", ico:"🔬", perfis:["admin"],             render:(v)=>renderEquipamentos(v) },
-  motoristas:   { titulo:"Motoristas",   ico:"🧑‍✈️", perfis:["admin"],          render:(v)=>renderMotoristas(v) },
-  fornecedores: { titulo:"Fornecedores", ico:"🤝", perfis:["admin"],             render:(v)=>renderFornecedores(v) },
-  financeiro:   { titulo:"Financeiro",   ico:"💰", perfis:["admin"],             render:(v)=>Financeiro.render(v) }
+  dashboard:    { titulo:"Dashboard",    ico:ICO.dashboard,    perfis:["admin"],             render:(v)=>Dashboard.render(v) },
+  romaneio:     { titulo:"Romaneio",     ico:ICO.romaneio,     perfis:["admin","motorista"], render:(v,u)=>Romaneio.render(v,u) },
+  locacoes:     { titulo:"Locações",     ico:ICO.locacoes,     perfis:["admin"],             render:(v)=>Locacoes.render(v) },
+  clientes:     { titulo:"Clientes",     ico:ICO.clientes,     perfis:["admin"],             render:(v)=>renderClientes(v) },
+  equipamentos: { titulo:"Equipamentos", ico:ICO.equipamentos, perfis:["admin"],             render:(v)=>renderEquipamentos(v) },
+  motoristas:   { titulo:"Motoristas",   ico:ICO.motoristas,   perfis:["admin"],             render:(v)=>renderMotoristas(v) },
+  fornecedores: { titulo:"Fornecedores", ico:ICO.fornecedores, perfis:["admin"],             render:(v)=>renderFornecedores(v) },
+  financeiro:   { titulo:"Financeiro",   ico:ICO.financeiro,   perfis:["admin"],             render:(v)=>Financeiro.render(v) }
 };
 
 const NAV_SECTIONS = [
