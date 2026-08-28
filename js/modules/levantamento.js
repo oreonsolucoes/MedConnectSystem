@@ -5,10 +5,10 @@
    - Gráfico: comparativo mensal (receita × custo × lucro) estilo BI
    - Gráfico: clientes com maior receita no período
    - Gráfico: maiores custos (motoristas, sublocação, técnica, despesas…)
-   - Exportação em PDF (jsPDF + autoTable)
+   - Exportação em PDF (via impressão do navegador — "Salvar como PDF")
    =================================================================== */
 import { Store } from "./store.js";
-import { BRL, fmtData, esc, toast } from "./utils.js";
+import { BRL, fmtData, esc } from "./utils.js";
 
 /* Decompõe os custos de uma locação por categoria */
 function custosLocacao(l){
@@ -260,133 +260,70 @@ export async function render(view){
     ultimo = { ini, fim, receita, recebido, aReceber, custoCat, custoTotal, lucro, margem, meses, clientesRank, custosRank, linhas };
   }
 
-  /* ---------------- Exportação PDF ---------------- */
-  async function exportarPDF(){
+  /* ---------------- Exportação PDF (via impressão do navegador) ---------------- */
+  function exportarPDF(){
     if(!ultimo) return;
-    const btn = view.querySelector("#lev-pdf");
-    const txt = btn.textContent; btn.disabled=true; btn.textContent="Gerando...";
-    try{
-      const { jsPDF } = await import("https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm");
-      const autoTableMod = await import("https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/+esm");
-      const d = ultimo;
-      const doc = new jsPDF({ unit:"pt", format:"a4" });
-
-      // Resolve o autoTable independentemente de como o CDN o expõe:
-      // (1) método já anexado ao doc (plugin clássico)
-      // (2) export default   (3) export nomeado  (4) função no módulo
-      const atFn = (typeof autoTableMod.default === "function") ? autoTableMod.default
-                 : (typeof autoTableMod.autoTable === "function") ? autoTableMod.autoTable
-                 : null;
-      const runTable = (options) => {
-        if (typeof doc.autoTable === "function") doc.autoTable(options);
-        else if (atFn) atFn(doc, options);
-        else throw new Error("Plugin autoTable não carregou. Verifique a conexão.");
-        // finalY pode estar em doc.lastAutoTable (plugin) ou em options (função)
-        return (doc.lastAutoTable && doc.lastAutoTable.finalY)
-            || (options.lastAutoTable && options.lastAutoTable.finalY)
-            || options.startY + 40;
-      };
-
-      const pw = doc.internal.pageSize.getWidth();
-      const brl = v => "R$ " + (Number(v)||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-
-      // Cabeçalho
-      doc.setFillColor(13,79,139); doc.rect(0,0,pw,70,"F");
-      doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(18);
-      doc.text("Levantamento Financeiro", 40, 32);
-      doc.setFont("helvetica","normal"); doc.setFontSize(10);
-      const per = `Período: ${d.ini?fmtData(d.ini):"—"} a ${d.fim?fmtData(d.fim):"—"}`;
-      doc.text(per, 40, 50);
-      doc.text("MedConnect · Gestão de Locações", pw-40, 50, {align:"right"});
-
-      let yy = 96;
-      // Resumo (cards)
-      const resumo = [
-        ["Entradas (receita)", brl(d.receita)],
-        ["Saídas (custos)",   brl(d.custoTotal)],
-        ["Lucro do período",  brl(d.lucro)],
-        ["Margem",            d.margem.toFixed(1)+"%"],
-        ["A receber",         brl(d.aReceber)]
-      ];
-      const cw=(pw-80)/resumo.length;
-      resumo.forEach((r,i)=>{
-        const x=40+cw*i;
-        doc.setDrawColor(226,232,240); doc.setFillColor(248,250,252);
-        doc.roundedRect(x,yy,cw-8,54,4,4,"FD");
-        doc.setTextColor(100,116,139); doc.setFontSize(7.5); doc.setFont("helvetica","bold");
-        doc.text(r[0].toUpperCase(), x+8, yy+16);
-        doc.setTextColor(18,36,63); doc.setFontSize(12);
-        doc.text(r[1], x+8, yy+38);
-      });
-      yy += 78;
-
-      // Comparativo mensal (tabela)
-      doc.setTextColor(18,36,63); doc.setFont("helvetica","bold"); doc.setFontSize(12);
-      doc.text("Comparativo mensal", 40, yy); yy+=8;
-      let ultimaY = runTable({
-        startY: yy, margin:{left:40,right:40},
-        head:[["Mês","Receita","Custo","Lucro","Margem"]],
-        body: d.meses.map(m=>[m.label, brl(m.receita), brl(m.custo), brl(m.lucro), (m.receita?(m.lucro/m.receita*100):0).toFixed(1)+"%"]),
-        headStyles:{fillColor:[13,79,139],fontSize:9}, bodyStyles:{fontSize:9},
-        columnStyles:{1:{halign:"right"},2:{halign:"right"},3:{halign:"right"},4:{halign:"right"}}
-      });
-      yy = ultimaY + 22;
-
-      // Clientes maior receita
-      doc.setFont("helvetica","bold"); doc.setFontSize(12);
-      doc.text("Clientes com maior receita", 40, yy); yy+=8;
-      ultimaY = runTable({
-        startY: yy, margin:{left:40,right:40},
-        head:[["Cliente","Receita"]],
-        body: d.clientesRank.map(c=>[c.label, brl(c.valor)]),
-        headStyles:{fillColor:[13,79,139],fontSize:9}, bodyStyles:{fontSize:9},
-        columnStyles:{1:{halign:"right"}}
-      });
-      yy = ultimaY + 22;
-
-      // Maiores custos
-      if(yy > 680){ doc.addPage(); yy=50; }
-      doc.setFont("helvetica","bold"); doc.setFontSize(12);
-      doc.text("Maiores custos", 40, yy); yy+=8;
-      ultimaY = runTable({
-        startY: yy, margin:{left:40,right:40},
-        head:[["Categoria","Valor"]],
-        body: d.custosRank.map(c=>[c.label, brl(c.valor)]),
-        headStyles:{fillColor:[214,69,61],fontSize:9}, bodyStyles:{fontSize:9},
-        columnStyles:{1:{halign:"right"}}
-      });
-      yy = ultimaY + 22;
-
-      // Detalhe entradas x saídas
-      doc.addPage(); yy=50;
-      doc.setFont("helvetica","bold"); doc.setFontSize(12);
-      doc.text("Entradas × Saídas (detalhe)", 40, yy); yy+=8;
-      runTable({
-        startY: yy, margin:{left:40,right:40},
-        head:[["Data","Cliente","Tecnologia","Entrada","Saída","Resultado","Status"]],
-        body: d.linhas.map(l=>{
-          const c=custosLocacaoAjustado(l); const saida=Object.values(c).reduce((a,b)=>a+b,0);
-          const ent=Number(l.valorCliente)||0;
-          return [fmtData(l.data), l.cliente||"—", l.tecnologia||"—", brl(ent), brl(saida), brl(ent-saida), l.statusPgto||"—"];
-        }),
-        headStyles:{fillColor:[13,79,139],fontSize:8.5}, bodyStyles:{fontSize:8},
-        columnStyles:{3:{halign:"right"},4:{halign:"right"},5:{halign:"right"}}
-      });
-
-      // Rodapé com paginação
-      const total = doc.internal.getNumberOfPages();
-      for(let i=1;i<=total;i++){
-        doc.setPage(i); doc.setFontSize(8); doc.setTextColor(150);
-        doc.text(`Gerado em ${new Date().toLocaleString("pt-BR")}`, 40, doc.internal.pageSize.getHeight()-20);
-        doc.text(`Página ${i} de ${total}`, pw-40, doc.internal.pageSize.getHeight()-20, {align:"right"});
-      }
-
-      doc.save(`levantamento_${d.ini||"inicio"}_${d.fim||"fim"}.pdf`);
-      toast("PDF gerado");
-    }catch(e){
-      console.error(e); toast("Falha ao gerar PDF",true);
-    }finally{ btn.disabled=false; btn.textContent=txt; }
+    const d = ultimo;
+    // Cabeçalho que só aparece na impressão
+    let cab = document.getElementById("lev-print-cab");
+    if(!cab){
+      cab = document.createElement("div");
+      cab.id = "lev-print-cab";
+      cab.className = "lev-print-only";
+      view.prepend(cab);
+    }
+    cab.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #0d4f8b;padding-bottom:10px;margin-bottom:16px">
+        <div>
+          <div style="font-size:20px;font-weight:800;color:#0d4f8b">Levantamento Financeiro</div>
+          <div style="font-size:12px;color:#475569;margin-top:2px">Período: ${d.ini?fmtData(d.ini):"—"} a ${d.fim?fmtData(d.fim):"—"}</div>
+        </div>
+        <div style="text-align:right;font-size:11px;color:#64748b">
+          MedConnect · Gestão de Locações<br>
+          Gerado em ${new Date().toLocaleString("pt-BR")}
+        </div>
+      </div>`;
+    document.body.classList.add("printing-lev");
+    // Pequeno atraso p/ o cabeçalho renderizar antes de abrir o diálogo
+    setTimeout(()=>{
+      window.print();
+      document.body.classList.remove("printing-lev");
+    }, 60);
   }
+
+  /* Injeta o CSS de impressão uma única vez */
+  function garantirEstiloImpressao(){
+    if(document.getElementById("lev-print-style")) return;
+    const st = document.createElement("style");
+    st.id = "lev-print-style";
+    st.textContent = `
+      .lev-print-only{ display:none; }
+      @media print{
+        /* imprime cores de fundo (barras, badges, cards) */
+        *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+        /* esconde tudo do app */
+        body.printing-lev .sidebar,
+        body.printing-lev .topbar,
+        body.printing-lev #overlay,
+        body.printing-lev #lev-pdf,
+        body.printing-lev .page-head > button,
+        body.printing-lev #modal,
+        body.printing-lev #toast{ display:none !important; }
+        /* remove margens/scroll do layout p/ ocupar a folha */
+        body.printing-lev .app-shell,
+        body.printing-lev .main,
+        body.printing-lev .view{ display:block !important; margin:0 !important; padding:0 !important; height:auto !important; overflow:visible !important; }
+        body.printing-lev .lev-print-only{ display:block !important; }
+        /* oculta a barra de filtros de período (não faz sentido no PDF) */
+        body.printing-lev #lev-ini, body.printing-lev #lev-fim{ }
+        body.printing-lev .panel{ break-inside:avoid; box-shadow:none !important; border:1px solid #e2e8f0 !important; }
+        body.printing-lev .cards-grid{ break-inside:avoid; }
+        body.printing-lev table.data{ font-size:11px; }
+        @page{ margin:14mm 12mm; }
+      }`;
+    document.head.appendChild(st);
+  }
+  garantirEstiloImpressao();
 
   view.querySelector("#lev-aplicar").onclick = calcular;
   view.querySelector("#lev-pdf").onclick = exportarPDF;
