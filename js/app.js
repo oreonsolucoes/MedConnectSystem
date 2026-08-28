@@ -35,10 +35,30 @@ const NAV_SECTIONS = [
 let currentUser = null;
 
 /* ============================ AUTH ============================ */
-function login(email, senha){
-  const u = usuarios.find(x => x.email === email.trim().toLowerCase() && x.senha === senha);
-  if (!u){ $("#login-error").textContent = "E-mail ou senha inválidos."; return; }
-  entrar(u);
+async function login(email, senha){
+  $("#login-error").textContent = "";
+  $("#btn-login").disabled = true;
+  $("#btn-login").textContent = "Entrando...";
+  try {
+    if(USE_FIREBASE){
+      const { signInWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+      const cred = await signInWithEmailAndPassword(auth, email.trim(), senha);
+      // Busca o perfil do usuário no Firestore
+      const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+      const snap = await getDoc(doc(db, "usuarios", cred.user.uid));
+      const perfil = snap.exists() ? snap.data() : { nome: cred.user.email, perfil: "admin" };
+      entrar({ id: cred.user.uid, email: cred.user.email, ...perfil });
+    } else {
+      const u = usuarios.find(x => x.email === email.trim().toLowerCase() && x.senha === senha);
+      if (!u) throw new Error("inválido");
+      entrar(u);
+    }
+  } catch(e){
+    $("#login-error").textContent = "E-mail ou senha inválidos.";
+  } finally {
+    $("#btn-login").disabled = false;
+    $("#btn-login").textContent = "Entrar";
+  }
 }
 
 function entrar(u){
