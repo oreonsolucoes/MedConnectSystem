@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>MedConnect · Gestão de Locações</title>
+  <meta name="theme-color" content="#0d4f8b" />
+  <link rel="icon" href="assets/logo-icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ===================== TELA DE LOGIN ===================== -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <img src="assets/logo.png" alt="MedConnect" class="login-logo" />
+      <p class="login-sub">Sistema de Gestão de Locações de Tecnologia Estética</p>
+      <div class="login-form">
+        <label>E-mail</label>
+        <input id="login-email" type="email" placeholder="seu@email.com" autocomplete="username" />
+        <label>Senha</label>
+        <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password" />
+        <button id="btn-login" class="btn btn-primary btn-block">Entrar</button>
+        <p id="login-error" class="login-error"></p>
+      </div>
+      <div class="login-demo">
+        <span>Acesso rápido (demonstração):</span>
+        <div class="demo-buttons">
+          <button class="btn btn-ghost" data-demo="admin">Admin (Vilma)</button>
+          <button class="btn btn-ghost" data-demo="motorista">Motorista</button>
+        </div>
+        <a href="motorista.html" class="btn btn-primary btn-block" style="margin-top:12px;text-decoration:none;display:block;text-align:center">🚚 Abrir App do Motorista</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== APLICAÇÃO ===================== -->
+  <div id="app-shell" class="app-shell hidden">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-head">
+        <img src="assets/logo-branco.png" alt="MedConnect" class="sidebar-logo" />
+        <button id="sidebar-toggle" class="sidebar-toggle" title="Recolher">≡</button>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <!-- itens injetados via JS conforme perfil -->
+      </nav>
+      <div class="sidebar-foot">
+        <div class="user-badge">
+          <div class="user-avatar" id="side-avatar">V</div>
+          <div class="user-info">
+            <strong id="side-name">—</strong>
+            <span id="side-role">—</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CONTEÚDO -->
+    <div class="main">
+      <header class="topbar">
+        <button id="mobile-menu" class="mobile-menu">≡</button>
+        <h1 id="page-title">Dashboard</h1>
+        <div class="topbar-right">
+          <span id="top-user" class="top-user">—</span>
+          <button id="btn-logout" class="btn btn-ghost btn-sm">Sair</button>
+        </div>
+      </header>
+
+      <main id="view" class="view">
+        <!-- módulo renderizado aqui -->
+      </main>
+    </div>
+
+    <div id="overlay" class="overlay hidden"></div>
+  </div>
+
+  <!-- MODAL GENÉRICO -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="modal-title">Título</h3>
+        <button id="modal-close" class="modal-close">×</button>
+      </div>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+/* ===================================================================
+   MedConnect Motorista · App dedicado (mobile-first)
+   Interface grande, tátil e intuitiva. Sem sidebar de sistema.
+   =================================================================== */
+:root{
+  --brand:#0d4f8b; --brand-dark:#0a3a66; --brand-navy:#12243f;
+  --accent:#1c9bd8; --ok:#1e9e6a; --warn:#e0a010; --danger:#d6453d;
+  --bg:#eef2f7; --surface:#fff; --line:#e2e8f0; --text:#1e293b; --muted:#64748b;
+  --radius:16px; --shadow:0 2px 10px rgba(16,24,40,.08); --shadow-lg:0 10px 30px rgba(16,24,40,.2);
+  --font:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+}
+*{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html,body{ height:100%; }
+body{ font-family:var(--font); background:var(--bg); color:var(--text); font-size:16px; overscroll-behavior-y:none; }
+.hidden{ display:none !important; }
+button{ font-family:inherit; cursor:pointer; }
+input,select{ font-family:inherit; font-size:16px; } /* 16px evita zoom no iOS */
+
+.btn{ border:none; border-radius:12px; padding:15px 18px; font-size:16px; font-weight:700; transition:.12s; background:#e8eef5; color:var(--text); }
+.btn:active{ transform:scale(.97); }
+.btn-primary{ background:var(--brand); color:#fff; }
+.btn-ok{ background:var(--ok); color:#fff; }
+.btn-ghost{ background:#fff; border:1.5px solid var(--line); color:var(--text); }
+.btn-block{ width:100%; }
+.btn-lg{ padding:18px; font-size:17px; }
+
+/* ===================== LOGIN PIN ===================== */
+.pin-screen{ position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:linear-gradient(160deg,var(--brand),var(--brand-navy)); padding:24px; }
+.pin-logo{ width:190px; max-width:70%; margin-bottom:8px; }
+.pin-sub{ color:#cfe0f2; font-size:14px; margin-bottom:28px; text-align:center; }
+.pin-box{ background:#fff; border-radius:24px; padding:26px 22px; width:100%; max-width:360px; box-shadow:var(--shadow-lg); }
+.pin-box h2{ text-align:center; font-size:19px; color:var(--brand-navy); margin-bottom:4px; }
+.pin-box p{ text-align:center; color:var(--muted); font-size:13.5px; margin-bottom:18px; }
+.pin-display{ display:flex; justify-content:center; gap:12px; margin-bottom:22px; }
+.pin-dot{ width:18px; height:18px; border-radius:50%; background:#dde5ee; transition:.15s; }
+.pin-dot.filled{ background:var(--brand); transform:scale(1.1); }
+.pin-pad{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.pin-key{ aspect-ratio:1; border-radius:16px; border:none; background:#f1f5f9; font-size:26px; font-weight:700; color:var(--brand-navy); }
+.pin-key:active{ background:var(--brand); color:#fff; }
+.pin-key.action{ background:transparent; font-size:15px; font-weight:600; color:var(--muted); }
+.pin-error{ color:#ffd7d3; text-align:center; font-size:14px; margin-top:14px; min-height:18px; font-weight:600; }
+
+/* ===================== TOPO ===================== */
+.app{ display:flex; flex-direction:column; min-height:100vh; }
+.topo{ position:sticky; top:0; z-index:30; background:var(--brand-navy); color:#fff;
+  padding:14px 16px calc(14px + env(safe-area-inset-top)); display:flex; align-items:center; gap:12px; }
+.topo .ola{ flex:1; line-height:1.25; }
+.topo .ola small{ display:block; color:#a9c0da; font-size:12px; }
+.topo .ola strong{ font-size:17px; }
+.sino{ position:relative; background:rgba(255,255,255,.12); border:none; color:#fff; width:46px; height:46px; border-radius:14px; font-size:22px; }
+.sino .contador{ position:absolute; top:-4px; right:-4px; background:var(--danger); color:#fff; font-size:12px; font-weight:800;
+  min-width:22px; height:22px; border-radius:11px; display:grid; place-items:center; padding:0 5px; border:2px solid var(--brand-navy); }
+.sino-sair{ background:rgba(255,255,255,.12); border:none; color:#fff; width:46px; height:46px; border-radius:14px; font-size:18px; }
+
+/* ===================== FILTROS ===================== */
+.filtros{ background:var(--surface); padding:14px 16px; display:flex; gap:10px; overflow-x:auto; border-bottom:1px solid var(--line);
+  position:sticky; top:70px; z-index:20; }
+.chip{ flex-shrink:0; padding:10px 16px; border-radius:22px; border:1.5px solid var(--line); background:#fff;
+  font-size:14px; font-weight:600; color:var(--muted); white-space:nowrap; }
+.chip.active{ background:var(--brand); border-color:var(--brand); color:#fff; }
+.filtro-data-row{ background:var(--surface); padding:0 16px 14px; display:flex; gap:10px; align-items:center; }
+.filtro-data-row input{ flex:1; padding:12px; border:1.5px solid var(--line); border-radius:12px; }
+
+/* ===================== LISTA DE ROTAS ===================== */
+.rotas{ padding:16px; display:flex; flex-direction:column; gap:14px; flex:1; }
+.grupo-dia{ font-size:13px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:6px 4px 2px; }
+
+.card{ background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; border-left:6px solid var(--brand); }
+.card.feito{ border-left-color:var(--ok); }
+.card-topo{ padding:16px; }
+.card-cli{ font-size:19px; font-weight:800; color:var(--brand-navy); }
+.card-tec{ display:inline-block; margin-top:6px; padding:3px 12px; border-radius:20px; background:#e8f1fa; color:var(--brand); font-size:13px; font-weight:700; }
+.card-tec.subloc{ background:#fdf3dc; color:#a9760a; }
+.card-info{ margin-top:14px; display:flex; flex-direction:column; gap:9px; }
+.card-info .linha{ display:flex; align-items:center; gap:11px; font-size:15px; }
+.card-info .ic{ font-size:19px; width:24px; text-align:center; }
+.card-info .txt{ flex:1; }
+.card-info .txt b{ display:block; font-size:12px; color:var(--muted); font-weight:600; }
+.valor-linha{ margin-top:4px; padding-top:11px; border-top:1px dashed var(--line); }
+.valor-motorista{ font-size:19px; font-weight:800; color:var(--ok); }
+.card-acoes{ display:flex; gap:0; border-top:1px solid var(--line); }
+.card-acoes button{ flex:1; padding:15px 8px; background:#fff; border:none; font-size:14.5px; font-weight:700; color:var(--brand); }
+.card-acoes button:active{ background:#f1f5f9; }
+.card-acoes button + button{ border-left:1px solid var(--line); }
+.card-acoes .waze{ color:#33ccff; }
+.card-acoes .maps{ color:#1e9e6a; }
+.card-acoes .maps{ color:var(--muted); }
+.status-tag{ float:right; font-size:12px; font-weight:800; padding:4px 10px; border-radius:20px; }
+.status-tag.pend{ background:#fdf3dc; color:#a9760a; }
+.status-tag.ok{ background:#e2f5ec; color:var(--ok); }
+
+.vazio{ text-align:center; color:var(--muted); padding:50px 20px; }
+.vazio .big{ font-size:44px; margin-bottom:10px; }
+
+/* ===================== PAINEL DE NOTIFICAÇÕES ===================== */
+.drawer-bg{ position:fixed; inset:0; background:rgba(15,23,42,.5); z-index:50; }
+.drawer{ position:fixed; top:0; right:0; bottom:0; width:88%; max-width:400px; background:var(--bg); z-index:51;
+  display:flex; flex-direction:column; box-shadow:var(--shadow-lg); animation:slideIn .22s ease; }
+@keyframes slideIn{ from{ transform:translateX(100%); } to{ transform:translateX(0); } }
+.drawer-topo{ background:var(--brand-navy); color:#fff; padding:calc(16px + env(safe-area-inset-top)) 18px 16px;
+  display:flex; align-items:center; justify-content:space-between; }
+.drawer-topo h3{ font-size:17px; }
+.drawer-topo button{ background:rgba(255,255,255,.15); border:none; color:#fff; width:38px; height:38px; border-radius:12px; font-size:20px; }
+.drawer-lista{ flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:11px; }
+.notif{ background:#fff; border-radius:14px; padding:14px; box-shadow:var(--shadow); border-left:5px solid var(--muted); }
+.notif.nova{ border-left-color:var(--ok); }
+.notif.alterada{ border-left-color:var(--warn); }
+.notif.removida{ border-left-color:var(--danger); }
+.notif.nao-lida{ background:#f0f7ff; }
+.notif-top{ display:flex; align-items:center; gap:8px; }
+.notif-tag{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; padding:2px 9px; border-radius:20px; }
+.notif.nova .notif-tag{ background:#e2f5ec; color:var(--ok); }
+.notif.alterada .notif-tag{ background:#fdf3dc; color:#a9760a; }
+.notif.removida .notif-tag{ background:#fbe4e2; color:var(--danger); }
+.notif-quando{ margin-left:auto; font-size:12px; color:var(--muted); }
+.notif-txt{ margin-top:8px; font-size:15px; font-weight:600; color:var(--text); }
+.notif-ok{ margin-top:12px; width:100%; padding:11px; border:none; border-radius:10px; background:var(--ok); color:#fff; font-weight:700; font-size:14px; }
+.notif-badge-resolv{ margin-top:10px; font-size:13px; color:var(--muted); font-style:italic; }
+
+/* ===================== MODAL CHECKLIST ===================== */
+.tela-cheia{ position:fixed; inset:0; background:var(--bg); z-index:60; display:flex; flex-direction:column; }
+.tela-topo{ background:var(--brand-navy); color:#fff; padding:calc(14px + env(safe-area-inset-top)) 16px 14px;
+  display:flex; align-items:center; gap:12px; position:sticky; top:0; }
+.tela-topo button{ background:rgba(255,255,255,.15); border:none; color:#fff; width:40px; height:40px; border-radius:12px; font-size:20px; }
+.tela-topo .tt{ flex:1; line-height:1.25; }
+.tela-topo .tt strong{ font-size:17px; display:block; }
+.tela-topo .tt small{ color:#a9c0da; font-size:12.5px; }
+.tela-corpo{ flex:1; overflow-y:auto; padding:16px; padding-bottom:110px; }
+
+.fase-switch{ display:flex; gap:8px; background:#fff; padding:6px; border-radius:14px; margin-bottom:18px; box-shadow:var(--shadow); }
+.fase-switch button{ flex:1; padding:12px; border:none; border-radius:10px; background:transparent; font-weight:700; font-size:15px; color:var(--muted); }
+.fase-switch button.active{ background:var(--brand); color:#fff; }
+
+.sec{ background:#fff; border-radius:14px; margin-bottom:14px; overflow:hidden; box-shadow:var(--shadow); }
+.sec h4{ padding:14px 16px; font-size:14px; color:var(--brand); background:#f7fafd; border-bottom:1px solid var(--line); }
+.item{ display:flex; align-items:center; gap:14px; padding:14px 16px; border-bottom:1px solid #f1f5f9; }
+.item:last-child{ border-bottom:none; }
+.item input{ width:26px; height:26px; accent-color:var(--ok); flex-shrink:0; }
+.item label{ font-size:16px; flex:1; }
+
+/* Upload de mídia */
+.midia-area{ background:#fff; border-radius:14px; padding:16px; box-shadow:var(--shadow); margin-bottom:14px; }
+.midia-area h4{ font-size:14px; color:var(--brand); margin-bottom:12px; }
+.midia-botoes{ display:flex; gap:10px; margin-bottom:14px; }
+.midia-botoes .btn{ flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; padding:16px 8px; font-size:14px; }
+.midia-botoes .ic{ font-size:26px; }
+.midia-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.thumb{ position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; background:#f1f5f9; }
+.thumb img,.thumb video{ width:100%; height:100%; object-fit:cover; }
+.thumb .rm{ position:absolute; top:3px; right:3px; background:rgba(0,0,0,.6); color:#fff; border:none; width:24px; height:24px; border-radius:12px; font-size:14px; }
+.thumb .up{ position:absolute; inset:0; background:rgba(13,79,139,.75); color:#fff; display:grid; place-items:center; font-size:12px; font-weight:700; }
+.thumb .vid-ic{ position:absolute; bottom:4px; left:4px; font-size:16px; }
+.midia-status{ font-size:13px; color:var(--muted); margin-top:10px; }
+.simulado-aviso{ background:#fdf3dc; color:#8a6100; font-size:12.5px; padding:9px 12px; border-radius:10px; margin-top:10px; line-height:1.4; }
+
+.assinatura-area{ background:#fff; border-radius:14px; padding:16px; box-shadow:var(--shadow); margin-bottom:14px; }
+.assinatura-area h4{ font-size:14px; color:var(--brand); margin-bottom:12px; }
+.assinatura-pad{ width:100%; height:170px; border:2px dashed var(--line); border-radius:12px; background:#fcfdfe; touch-action:none; }
+.assinatura-limpar{ margin-top:10px; }
+
+.rodape-fixo{ position:fixed; bottom:0; left:0; right:0; padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+  background:#fff; border-top:1px solid var(--line); box-shadow:0 -4px 20px rgba(16,24,40,.08); }
+
+/* Toast */
+.toast{ position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:var(--brand-navy); color:#fff;
+  padding:14px 24px; border-radius:30px; z-index:90; font-weight:700; font-size:15px; box-shadow:var(--shadow-lg); max-width:90%; text-align:center; }
+.toast.err{ background:var(--danger); }
+.toast.ok{ background:var(--ok); }
+
+/* ===================== RESPONSIVO / DESKTOP ===================== */
+@media (min-width:640px){
+  .pin-screen{ max-width:100%; }
+  .app{ max-width:1100px; margin:0 auto; box-shadow:0 0 40px rgba(16,24,40,.08); min-height:100vh; }
+  body{ background:#dbe4ee; }
+
+  /* topo e filtros acompanham a largura da coluna central */
+  .topo{ border-radius:0; }
+
+  /* cards em grade nas telas maiores, mantendo o visual de app */
+  .rotas{ display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); align-items:start; gap:16px; }
+  .grupo-dia{ grid-column:1/-1; }
+  .drawer{ max-width:420px; }
+}
+@media (min-width:1000px){
+  .rotas{ grid-template-columns:repeat(3,1fr); }
+}
