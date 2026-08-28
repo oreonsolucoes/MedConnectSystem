@@ -15,7 +15,7 @@ import {
 } from "./modules/cadastros.js";
 import { renderResponsaveis } from "./modules/responsaveis.js";
 
-/* ---------------- Rotas + permissões ---------------- */
+/* ---------------- Ícones SVG Lucide ---------------- */
 const ICO = {
   dashboard:    `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
   romaneio:     `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`,
@@ -23,9 +23,12 @@ const ICO = {
   clientes:     `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
   equipamentos: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="1"/></svg>`,
   motoristas:   `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M8.5 14.5A5 5 0 0 0 12 16a5 5 0 0 0 3.5-1.5"/><circle cx="9" cy="11" r="1" fill="currentColor"/><circle cx="15" cy="11" r="1" fill="currentColor"/></svg>`,
+  responsaveis: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 11l2 2 4-4"/></svg>`,
   fornecedores: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
   financeiro:   `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`
 };
+
+/* ---------------- Rotas + permissões ---------------- */
 const ROUTES = {
   dashboard:    { titulo:"Dashboard",    ico:ICO.dashboard,    perfis:["admin"],             render:(v)=>Dashboard.render(v) },
   romaneio:     { titulo:"Romaneio",     ico:ICO.romaneio,     perfis:["admin","motorista"], render:(v,u)=>Romaneio.render(v,u) },
@@ -33,7 +36,7 @@ const ROUTES = {
   clientes:     { titulo:"Clientes",     ico:ICO.clientes,     perfis:["admin"],             render:(v)=>renderClientes(v) },
   equipamentos: { titulo:"Equipamentos", ico:ICO.equipamentos, perfis:["admin"],             render:(v)=>renderEquipamentos(v) },
   motoristas:   { titulo:"Motoristas",   ico:ICO.motoristas,   perfis:["admin"],             render:(v)=>renderMotoristas(v) },
-  responsaveis: { titulo:"Responsáveis", ico:ICO_RESP,         perfis:["admin"],             render:(v)=>renderResponsaveis(v) },
+  responsaveis: { titulo:"Responsáveis", ico:ICO.responsaveis, perfis:["admin"],             render:(v)=>renderResponsaveis(v) },
   fornecedores: { titulo:"Fornecedores", ico:ICO.fornecedores, perfis:["admin"],             render:(v)=>renderFornecedores(v) },
   financeiro:   { titulo:"Financeiro",   ico:ICO.financeiro,   perfis:["admin"],             render:(v)=>Financeiro.render(v) }
 };
@@ -60,7 +63,6 @@ async function login(email, senha){
 
       const cred = await signInWithEmailAndPassword(auth, email.trim(), senha);
 
-      // Tenta buscar perfil no Firestore (coleção "usuarios", doc = uid)
       const snap = await getDoc(doc(db, "usuarios", cred.user.uid));
       const perfil = snap.exists()
         ? snap.data()
@@ -68,7 +70,6 @@ async function login(email, senha){
 
       entrar({ id:cred.user.uid, email:cred.user.email, ...perfil });
     } else {
-      // Modo demo local
       const { usuarios } = await import("./modules/mock-data.js");
       const u = usuarios.find(x =>
         x.email === email.trim().toLowerCase() && x.senha === senha);
@@ -181,11 +182,9 @@ function bindGlobal(){
 /* ==================== BOOTSTRAP ==================== */
 bindGlobal();
 
-// Sessão persistente (página recarregada)
 const saved = sessionStorage.getItem("mc_user");
 if(saved) entrar(JSON.parse(saved));
 
-// Firebase Auth: detecta sessão ativa mesmo sem sessionStorage
 if(USE_FIREBASE && auth){
   const { onAuthStateChanged } = await import(
     "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
@@ -194,7 +193,6 @@ if(USE_FIREBASE && auth){
 
   onAuthStateChanged(auth, async firebaseUser=>{
     if(firebaseUser && !currentUser){
-      // Usuário já autenticado no Firebase mas sem sessão local — restaura
       const snap = await getDoc(doc(db, "usuarios", firebaseUser.uid)).catch(()=>null);
       const perfil = snap?.exists()
         ? snap.data()
@@ -202,7 +200,6 @@ if(USE_FIREBASE && auth){
       entrar({ id:firebaseUser.uid, email:firebaseUser.email, ...perfil });
     }
     if(!firebaseUser && currentUser){
-      // Firebase expirou a sessão
       await logout();
     }
   });
