@@ -5,7 +5,7 @@
    - Quando online: sincroniza alterações pendentes com o Firestore
    =================================================================== */
 
-const CACHE_VERSION = "mc-v4";
+const CACHE_VERSION = "mc-v5";
 const CACHE_NAME    = `medconnect-${CACHE_VERSION}`;
 
 /* Arquivos que devem funcionar offline */
