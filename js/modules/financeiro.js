@@ -42,7 +42,7 @@ export async function render(view){
 
     $("#fin-receitas").innerHTML = `<div class="table-wrap"><table class="data">
       <thead><tr><th>Data</th><th>Cliente</th><th>Tecnologia</th><th class="text-right">Valor</th><th class="text-right">Lucro</th><th class="text-right">Margem</th><th>Status</th></tr></thead>
-      <tbody>${[...locacoes].sort((a,b)=>a.data.localeCompare(b.data)).map(l=>{
+      <tbody>${[...locacoes].sort((a,b)=>b.data.localeCompare(a.data)).map(l=>{
         const liq=lucroLiquido(l); const mg=l.valorCliente?(liq/l.valorCliente*100):0;
         return `<tr>
           <td class="mono">${fmtData(l.data)}</td><td>${esc(l.cliente)}</td>
