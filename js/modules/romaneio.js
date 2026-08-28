@@ -24,7 +24,7 @@ export async function render(view, currentUser){
     if (currentUser.perfil === "motorista"){
       minhas = lista.filter(l => (l.motorista||"").toLowerCase() === currentUser.nome.toLowerCase());
     }
-    minhas.sort((a,b)=> (a.data+(a.horario||"")).localeCompare(b.data+(b.horario||"")));
+    minhas.sort((a,b)=> (b.data+(b.horario||"")).localeCompare(a.data+(a.horario||"")));
 
     const draw = data=>{
       $("#rom-list").innerHTML = `<div class="table-wrap"><table class="data">
