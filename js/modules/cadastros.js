@@ -288,11 +288,16 @@ export async function renderMotoristas(view){
           </div>
           <p style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.5">
             O motorista usa este código de 4 dígitos para entrar no app.<br>
-            Após salvar, use o botão abaixo para copiar e enviar pelo WhatsApp.
+            Preencha o contato acima e envie o PIN + link de acesso pelo WhatsApp.
           </p>
-          <button class="btn btn-ghost btn-sm" id="m-copiar-pin" type="button" style="margin-top:6px">
-            📋 Copiar mensagem para WhatsApp
-          </button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+            <button class="btn btn-primary btn-sm" id="m-wa-pin" type="button">
+              💬 Enviar no WhatsApp
+            </button>
+            <button class="btn btn-ghost btn-sm" id="m-copiar-pin" type="button">
+              📋 Copiar mensagem
+            </button>
+          </div>
         </div>
 
         <div class="form-actions">
@@ -325,12 +330,29 @@ export async function renderMotoristas(view){
       toast("Novo PIN gerado — salve para confirmar");
     });
 
-    // Copiar para WhatsApp
-    $("#m-copiar-pin").addEventListener("click", ()=>{
+    // Monta a mensagem com PIN + link de acesso ao app do motorista
+    function montarMensagem(){
       const nome = $("#m-nome").value.trim() || "Motorista";
       const pin  = pinInput.value.trim();
-      if(!/^\d{4}$/.test(pin)){ toast("Gere ou informe um PIN válido antes de copiar", true); return; }
-      const txt = `Olá ${nome}! Seu PIN de acesso ao app MedConnect é: *${pin}*`;
+      if(!/^\d{4}$/.test(pin)){ toast("Gere ou informe um PIN válido antes de enviar", true); return null; }
+      const link = new URL("motorista.html", location.href).href;
+      return `Olá ${nome}! 👋\n\nSeu acesso ao App do Motorista MedConnect:\n\n🔗 Link: ${link}\n🔐 PIN: *${pin}*\n\nÉ só abrir o link e digitar o PIN para entrar. Bom trabalho! 🚚`;
+    }
+
+    // Enviar direto no WhatsApp (abre o wa.me com o número do motorista, se houver)
+    $("#m-wa-pin").addEventListener("click", ()=>{
+      const txt = montarMensagem();
+      if(!txt) return;
+      const fone = ($("#m-cont").value||"").replace(/\D/g,"");
+      const numero = fone ? (fone.length <= 11 ? "55"+fone : fone) : "";
+      const url = `https://wa.me/${numero}?text=${encodeURIComponent(txt)}`;
+      window.open(url, "_blank");
+    });
+
+    // Copiar mensagem (fallback)
+    $("#m-copiar-pin").addEventListener("click", ()=>{
+      const txt = montarMensagem();
+      if(!txt) return;
       navigator.clipboard?.writeText(txt)
         .then(()=> toast("Mensagem copiada — cole no WhatsApp ✓"))
         .catch(()=> prompt("Copie e envie ao motorista:", txt));
