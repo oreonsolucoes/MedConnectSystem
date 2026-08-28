@@ -10,6 +10,7 @@ import * as Dashboard  from "./modules/dashboard.js";
 import * as Locacoes   from "./modules/locacoes.js";
 import * as Romaneio   from "./modules/romaneio.js";
 import * as Financeiro from "./modules/financeiro.js";
+import * as Levantamento from "./modules/levantamento.js";
 import {
   renderClientes, renderMotoristas, renderFornecedores, renderEquipamentos
 } from "./modules/cadastros.js";
@@ -25,7 +26,8 @@ const ICO = {
   motoristas:   `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M8.5 14.5A5 5 0 0 0 12 16a5 5 0 0 0 3.5-1.5"/><circle cx="9" cy="11" r="1" fill="currentColor"/><circle cx="15" cy="11" r="1" fill="currentColor"/></svg>`,
   responsaveis: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 11l2 2 4-4"/></svg>`,
   fornecedores: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
-  financeiro:   `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`
+  financeiro:   `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+  levantamento: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="3" y1="20" x2="21" y2="20"/></svg>`
 };
 
 /* ---------------- Rotas + permissões ---------------- */
@@ -38,13 +40,14 @@ const ROUTES = {
   motoristas:   { titulo:"Motoristas",   ico:ICO.motoristas,   perfis:["admin"],             render:(v)=>renderMotoristas(v) },
   responsaveis: { titulo:"Responsáveis", ico:ICO.responsaveis, perfis:["admin"],             render:(v)=>renderResponsaveis(v) },
   fornecedores: { titulo:"Fornecedores", ico:ICO.fornecedores, perfis:["admin"],             render:(v)=>renderFornecedores(v) },
-  financeiro:   { titulo:"Financeiro",   ico:ICO.financeiro,   perfis:["admin"],             render:(v)=>Financeiro.render(v) }
+  financeiro:   { titulo:"Financeiro",   ico:ICO.financeiro,   perfis:["admin"],             render:(v)=>Financeiro.render(v) },
+  levantamento: { titulo:"Levantamento", ico:ICO.levantamento, perfis:["admin"],             render:(v)=>Levantamento.render(v) }
 };
 
 const NAV_SECTIONS = [
   { label:"Operação",  rotas:["dashboard","romaneio","locacoes"] },
   { label:"Cadastros", rotas:["clientes","equipamentos","motoristas","responsaveis","fornecedores"] },
-  { label:"Gestão",    rotas:["financeiro"] }
+  { label:"Gestão",    rotas:["financeiro","levantamento"] }
 ];
 
 let currentUser = null;
