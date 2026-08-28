@@ -15,7 +15,7 @@ export async function render(view){
                            .reduce((s,l)=> s + (Number(l.valorCliente)||0), 0);
   const sublocadas = locacoes.filter(l=> l.frota === "sublocado").length;
 
-  const proximas = [...locacoes].sort((a,b)=> a.data.localeCompare(b.data)).slice(0,6);
+  const proximas = [...locacoes].sort((a,b)=> b.data.localeCompare(a.data)).slice(0,6);
 
   view.innerHTML = `
     <div class="page-head">
