@@ -1,0 +1,14 @@
+{
+  "name": "MedConnect",
+  "short_name": "MedConnect",
+  "description": "Sistema de gestão de locações de tecnologia estética",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#12243f",
+  "theme_color": "#0d4f8b",
+  "orientation": "any",
+  "icons": [
+    { "src": "assets/logo-icon.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/logo-icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
