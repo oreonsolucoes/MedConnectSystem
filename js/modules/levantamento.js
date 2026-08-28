@@ -268,9 +268,25 @@ export async function render(view){
     try{
       const { jsPDF } = await import("https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm");
       const autoTableMod = await import("https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/+esm");
-      const autoTable = autoTableMod.default || autoTableMod.autoTable;
       const d = ultimo;
       const doc = new jsPDF({ unit:"pt", format:"a4" });
+
+      // Resolve o autoTable independentemente de como o CDN o expõe:
+      // (1) método já anexado ao doc (plugin clássico)
+      // (2) export default   (3) export nomeado  (4) função no módulo
+      const atFn = (typeof autoTableMod.default === "function") ? autoTableMod.default
+                 : (typeof autoTableMod.autoTable === "function") ? autoTableMod.autoTable
+                 : null;
+      const runTable = (options) => {
+        if (typeof doc.autoTable === "function") doc.autoTable(options);
+        else if (atFn) atFn(doc, options);
+        else throw new Error("Plugin autoTable não carregou. Verifique a conexão.");
+        // finalY pode estar em doc.lastAutoTable (plugin) ou em options (função)
+        return (doc.lastAutoTable && doc.lastAutoTable.finalY)
+            || (options.lastAutoTable && options.lastAutoTable.finalY)
+            || options.startY + 40;
+      };
+
       const pw = doc.internal.pageSize.getWidth();
       const brl = v => "R$ " + (Number(v)||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
 
@@ -307,45 +323,45 @@ export async function render(view){
       // Comparativo mensal (tabela)
       doc.setTextColor(18,36,63); doc.setFont("helvetica","bold"); doc.setFontSize(12);
       doc.text("Comparativo mensal", 40, yy); yy+=8;
-      autoTable(doc, {
+      let ultimaY = runTable({
         startY: yy, margin:{left:40,right:40},
         head:[["Mês","Receita","Custo","Lucro","Margem"]],
         body: d.meses.map(m=>[m.label, brl(m.receita), brl(m.custo), brl(m.lucro), (m.receita?(m.lucro/m.receita*100):0).toFixed(1)+"%"]),
         headStyles:{fillColor:[13,79,139],fontSize:9}, bodyStyles:{fontSize:9},
         columnStyles:{1:{halign:"right"},2:{halign:"right"},3:{halign:"right"},4:{halign:"right"}}
       });
-      yy = doc.lastAutoTable.finalY + 22;
+      yy = ultimaY + 22;
 
       // Clientes maior receita
       doc.setFont("helvetica","bold"); doc.setFontSize(12);
       doc.text("Clientes com maior receita", 40, yy); yy+=8;
-      autoTable(doc, {
+      ultimaY = runTable({
         startY: yy, margin:{left:40,right:40},
         head:[["Cliente","Receita"]],
         body: d.clientesRank.map(c=>[c.label, brl(c.valor)]),
         headStyles:{fillColor:[13,79,139],fontSize:9}, bodyStyles:{fontSize:9},
         columnStyles:{1:{halign:"right"}}
       });
-      yy = doc.lastAutoTable.finalY + 22;
+      yy = ultimaY + 22;
 
       // Maiores custos
       if(yy > 680){ doc.addPage(); yy=50; }
       doc.setFont("helvetica","bold"); doc.setFontSize(12);
       doc.text("Maiores custos", 40, yy); yy+=8;
-      autoTable(doc, {
+      ultimaY = runTable({
         startY: yy, margin:{left:40,right:40},
         head:[["Categoria","Valor"]],
         body: d.custosRank.map(c=>[c.label, brl(c.valor)]),
         headStyles:{fillColor:[214,69,61],fontSize:9}, bodyStyles:{fontSize:9},
         columnStyles:{1:{halign:"right"}}
       });
-      yy = doc.lastAutoTable.finalY + 22;
+      yy = ultimaY + 22;
 
       // Detalhe entradas x saídas
       doc.addPage(); yy=50;
       doc.setFont("helvetica","bold"); doc.setFontSize(12);
       doc.text("Entradas × Saídas (detalhe)", 40, yy); yy+=8;
-      autoTable(doc, {
+      runTable({
         startY: yy, margin:{left:40,right:40},
         head:[["Data","Cliente","Tecnologia","Entrada","Saída","Resultado","Status"]],
         body: d.linhas.map(l=>{
