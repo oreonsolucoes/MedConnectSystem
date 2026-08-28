@@ -23,7 +23,9 @@ export const lucroLiquido = l =>
   (Number(l.valorCliente)||0)
   - (Number(l.custoTransporte)||0)
   - (Number(l.custoTecnica)||0)
-  - (Number(l.motoristaCusto)||0);
+  - (Number(l.motoristaCusto)||0)
+  - (Number(l.comissaoResponsavel)||0)
+  - (Number(l.custoFornecedor)||0);
 
 export function toast(msg, isError=false){
   const t = $("#toast");
