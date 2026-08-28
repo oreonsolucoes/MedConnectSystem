@@ -4,6 +4,7 @@
    =================================================================== */
 import { USE_FIREBASE, auth, db } from "./firebase-config.js";
 import { $, $$, toast, closeModal } from "./modules/utils.js";
+import { abrirBoasVindas } from "./modules/tour.js";
 
 import * as Dashboard  from "./modules/dashboard.js";
 import * as Locacoes   from "./modules/locacoes.js";
@@ -59,7 +60,6 @@ async function login(email, senha){
 
       const cred = await signInWithEmailAndPassword(auth, email.trim(), senha);
 
-      // Tenta buscar perfil no Firestore (coleção "usuarios", doc = uid)
       const snap = await getDoc(doc(db, "usuarios", cred.user.uid));
       const perfil = snap.exists()
         ? snap.data()
@@ -67,7 +67,6 @@ async function login(email, senha){
 
       entrar({ id:cred.user.uid, email:cred.user.email, ...perfil });
     } else {
-      // Modo demo local
       const { usuarios } = await import("./modules/mock-data.js");
       const u = usuarios.find(x =>
         x.email === email.trim().toLowerCase() && x.senha === senha);
@@ -121,12 +120,23 @@ function montarInterface(){
     permitidas.forEach(r=>{
       const b = document.createElement("button");
       b.className = "nav-item"; b.dataset.route = r;
-      b.innerHTML = `<span class="ico">${ROUTES[r].ico}</span><span>${ROUTES[r].titulo}</span>`;
+      b.innerHTML = `<span class="ico" style="display:flex;align-items:center;width:20px">${ROUTES[r].ico}</span><span>${ROUTES[r].titulo}</span>`;
       b.onclick = ()=> navegar(r);
       nav.appendChild(b);
     });
   });
+
   navegar(currentUser.perfil === "motorista" ? "romaneio" : "dashboard");
+
+  // Botão do tour no rodapé da sidebar
+  const btnTour = document.createElement("button");
+  btnTour.className = "nav-item";
+  btnTour.style.cssText = "margin-top:8px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px;color:#a9c0da";
+  btnTour.innerHTML = `<span class="ico" style="display:flex;align-items:center;width:20px">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  </span><span>Tour do sistema</span>`;
+  btnTour.onclick = ()=> abrirBoasVindas(navegar);
+  nav.appendChild(btnTour);
 }
 
 /* ==================== ROTEAMENTO ==================== */
@@ -170,11 +180,9 @@ function bindGlobal(){
 /* ==================== BOOTSTRAP ==================== */
 bindGlobal();
 
-// Sessão persistente (página recarregada)
 const saved = sessionStorage.getItem("mc_user");
 if(saved) entrar(JSON.parse(saved));
 
-// Firebase Auth: detecta sessão ativa mesmo sem sessionStorage
 if(USE_FIREBASE && auth){
   const { onAuthStateChanged } = await import(
     "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
@@ -183,7 +191,6 @@ if(USE_FIREBASE && auth){
 
   onAuthStateChanged(auth, async firebaseUser=>{
     if(firebaseUser && !currentUser){
-      // Usuário já autenticado no Firebase mas sem sessão local — restaura
       const snap = await getDoc(doc(db, "usuarios", firebaseUser.uid)).catch(()=>null);
       const perfil = snap?.exists()
         ? snap.data()
@@ -191,7 +198,6 @@ if(USE_FIREBASE && auth){
       entrar({ id:firebaseUser.uid, email:firebaseUser.email, ...perfil });
     }
     if(!firebaseUser && currentUser){
-      // Firebase expirou a sessão
       await logout();
     }
   });
