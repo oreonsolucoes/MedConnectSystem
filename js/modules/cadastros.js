@@ -1,6 +1,7 @@
 /* Módulos de Cadastros Base ===================================== */
 import { Store } from "./store.js";
 import { $, esc, openModal, closeModal, toast } from "./utils.js";
+import { abrirRelatorioCliente } from "./relatorio.js";
 
 /* Helper genérico de tabela com toolbar de busca -------------------- */
 function tabela({ head, rows }){
@@ -24,30 +25,35 @@ function pageWrap(view, titulo, sub, btnLabel, onNew){
 
 /* ===================== CLIENTES ===================== */
 export async function renderClientes(view){
-  pageWrap(view,"Clientes","Base de clientes e histórico de locações","Novo cliente",()=>formCliente());
+  pageWrap(view,"Clientes","Base de clientes, endereços e relatórios por período","Novo cliente",()=>formCliente());
   Store.watch("clientes", lista => {
     const draw = (data)=> {
       $("#list").innerHTML = tabela({
-        head:["Nome","Documento","Contato","Endereço comercial","Voltagem",""],
+        head:["Nome","Contato","Endereço comercial","Voltagem",""],
         rows: data.map(c=>`
           <tr>
             <td><strong>${esc(c.nome)}</strong></td>
-            <td>${esc(c.doc)}: ${esc(c.documento||"—")}</td>
-            <td>${esc(c.telefone||"—")}<br><span class="text-muted">${esc(c.horario||"")}</span></td>
-            <td>${esc(c.endComercial||"—")}</td>
+            <td>${esc(c.telefone||"—")}<br><span class="text-muted" style="font-size:11px">${esc(c.horario||"")}</span></td>
+            <td style="max-width:280px;font-size:12.5px">${esc(c.endComercial||"—")}</td>
             <td>${esc(c.voltagem||"—")}</td>
-            <td class="text-right">
+            <td class="text-right" style="white-space:nowrap">
+              <button class="btn btn-ghost btn-sm" data-rel="${c.id}" title="Relatório por período">📊 Relatório</button>
               <button class="btn-icon" data-edit="${c.id}">✏️</button>
               <button class="btn-icon" data-del="${c.id}">🗑️</button>
             </td>
-          </tr>`).join("") || `<tr><td colspan="6" class="text-muted" style="padding:24px;text-align:center">Nenhum cliente.</td></tr>`
+          </tr>`).join("") || `<tr><td colspan="5" class="text-muted" style="padding:24px;text-align:center">Nenhum cliente.</td></tr>`
+      });
+      // Relatório
+      document.querySelectorAll("[data-rel]").forEach(b=> b.onclick=()=>{
+        const cli = lista.find(x=>x.id===b.dataset.rel);
+        if(cli) abrirRelatorioCliente(cli);
       });
       bindRowActions("clientes", lista, formCliente);
     };
     draw(lista);
     $("#search").oninput = e => {
       const q = e.target.value.toLowerCase();
-      draw(lista.filter(c => (c.nome+c.endComercial+c.telefone).toLowerCase().includes(q)));
+      draw(lista.filter(c => (c.nome+(c.endComercial||"")+(c.telefone||"")).toLowerCase().includes(q)));
     };
   });
 
@@ -58,11 +64,34 @@ export async function renderClientes(view){
         <div class="field"><label>Tipo de documento</label>
           <select id="f-doc"><option ${c.doc==="CPF"?"selected":""}>CPF</option><option ${c.doc==="CNPJ"?"selected":""}>CNPJ</option></select></div>
         <div class="field"><label>Número do documento</label><input id="f-documento" value="${esc(c.documento||"")}"></div>
-        <div class="field full"><label>Endereço residencial</label><input id="f-res" value="${esc(c.endResidencial||"")}"></div>
-        <div class="field full"><label>Endereço comercial (clínica)</label><input id="f-com" value="${esc(c.endComercial||"")}"></div>
-        <div class="field"><label>Voltagem do local</label><input id="f-volt" value="${esc(c.voltagem||"")}" placeholder="110V / 220V"></div>
+
+        <!-- Busca de CEP -->
+        <div class="field full" style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px">
+          <label style="color:var(--brand);font-size:13px;font-weight:700">📍 Endereço via CEP</label>
+          <div style="display:flex;gap:10px;margin-top:8px">
+            <input id="f-cep" value="${esc(c.cep||"")}" placeholder="00000-000" maxlength="9"
+              style="width:150px;padding:9px 11px;border:1.5px solid var(--brand);border-radius:8px">
+            <button class="btn btn-ghost btn-sm" id="btn-cep" type="button">🔍 Buscar CEP</button>
+            <span id="cep-status" style="font-size:12px;color:var(--muted);align-self:center"></span>
+          </div>
+        </div>
+        <div class="field"><label>Rua / Logradouro</label><input id="f-rua" value="${esc(c.rua||"")}"></div>
+        <div class="field"><label>Número</label><input id="f-numero" value="${esc(c.numero||"")}" placeholder="Nº"></div>
+        <div class="field"><label>Complemento (sala, andar...)</label><input id="f-comp" value="${esc(c.complemento||"")}"></div>
+        <div class="field"><label>Bairro</label><input id="f-bairro" value="${esc(c.bairro||"")}"></div>
+        <div class="field"><label>Cidade</label><input id="f-cidade" value="${esc(c.cidade||"")}"></div>
+        <div class="field"><label>Estado</label><input id="f-estado" value="${esc(c.estado||"")}" maxlength="2"></div>
+        <div class="field full"><label>Endereço completo (gerado automaticamente)</label>
+          <input id="f-com" value="${esc(c.endComercial||"")}"
+            placeholder="Preenchido pelo CEP ou digite manualmente"></div>
+        <div class="field full"><label>Endereço residencial</label>
+          <input id="f-res" value="${esc(c.endResidencial||"")}"></div>
+
+        <div class="field"><label>Voltagem do local</label>
+          <input id="f-volt" value="${esc(c.voltagem||"")}" placeholder="110V / 220V"></div>
         <div class="field"><label>Espaço físico</label><input id="f-esp" value="${esc(c.espaco||"")}"></div>
-        <div class="field full"><label>Restrições (acesso, elevador...)</label><input id="f-rest" value="${esc(c.restricoes||"")}"></div>
+        <div class="field full"><label>Restrições (acesso, elevador...)</label>
+          <input id="f-rest" value="${esc(c.restricoes||"")}"></div>
         <div class="field"><label>Telefone / WhatsApp</label><input id="f-tel" value="${esc(c.telefone||"")}"></div>
         <div class="field"><label>Horário de funcionamento</label><input id="f-hor" value="${esc(c.horario||"")}"></div>
         <div class="form-actions">
@@ -70,16 +99,73 @@ export async function renderClientes(view){
           <button class="btn btn-primary" id="c-save">Salvar</button>
         </div>
       </div>`);
+
+    // Formata CEP
+    $("#f-cep").oninput = e=>{
+      let v = e.target.value.replace(/\D/g,"");
+      if(v.length>5) v = v.slice(0,5)+"-"+v.slice(5,8);
+      e.target.value = v;
+    };
+
+    // Busca CEP via ViaCEP
+    $("#btn-cep").onclick = async()=>{
+      const cep = $("#f-cep").value.replace(/\D/g,"");
+      if(cep.length!==8){ toast("CEP inválido — deve ter 8 dígitos",true); return; }
+      $("#cep-status").textContent = "Buscando...";
+      try{
+        const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const d = await r.json();
+        if(d.erro){ toast("CEP não encontrado",true); $("#cep-status").textContent=""; return; }
+        $("#f-rua").value    = d.logradouro||"";
+        $("#f-bairro").value = d.bairro||"";
+        $("#f-cidade").value = d.localidade||"";
+        $("#f-estado").value = d.uf||"";
+        montarEnderecoCompleto();
+        $("#cep-status").textContent = "✓ Endereço encontrado";
+        setTimeout(()=>$("#cep-status").textContent="", 3000);
+        $("#f-numero").focus();
+      } catch(e){ toast("Erro ao buscar CEP",true); $("#cep-status").textContent=""; }
+    };
+
+    // Monta endereço completo automaticamente
+    const montarEnderecoCompleto = ()=>{
+      const rua    = $("#f-rua").value.trim();
+      const num    = $("#f-numero").value.trim();
+      const comp   = $("#f-comp").value.trim();
+      const bairro = $("#f-bairro").value.trim();
+      const cidade = $("#f-cidade").value.trim();
+      const estado = $("#f-estado").value.trim();
+      const partes = [rua, num, comp, bairro, cidade, estado].filter(Boolean);
+      $("#f-com").value = partes.join(", ");
+    };
+    ["f-rua","f-numero","f-comp","f-bairro","f-cidade","f-estado"].forEach(id=>{
+      const el = $("#"+id); if(el) el.oninput = montarEnderecoCompleto;
+    });
+
     $("#c-cancel").onclick = closeModal;
     $("#c-save").onclick = async ()=>{
       const data = {
-        nome:$("#f-nome").value.trim(), doc:$("#f-doc").value, documento:$("#f-documento").value.trim(),
-        endResidencial:$("#f-res").value.trim(), endComercial:$("#f-com").value.trim(),
-        voltagem:$("#f-volt").value.trim(), espaco:$("#f-esp").value.trim(), restricoes:$("#f-rest").value.trim(),
-        telefone:$("#f-tel").value.trim(), horario:$("#f-hor").value.trim()
+        nome:       $("#f-nome").value.trim(),
+        doc:        $("#f-doc").value,
+        documento:  $("#f-documento").value.trim(),
+        cep:        $("#f-cep").value.trim(),
+        rua:        $("#f-rua").value.trim(),
+        numero:     $("#f-numero").value.trim(),
+        complemento:$("#f-comp").value.trim(),
+        bairro:     $("#f-bairro").value.trim(),
+        cidade:     $("#f-cidade").value.trim(),
+        estado:     $("#f-estado").value.trim(),
+        endComercial: $("#f-com").value.trim(),
+        endResidencial:$("#f-res").value.trim(),
+        voltagem:   $("#f-volt").value.trim(),
+        espaco:     $("#f-esp").value.trim(),
+        restricoes: $("#f-rest").value.trim(),
+        telefone:   $("#f-tel").value.trim(),
+        horario:    $("#f-hor").value.trim()
       };
       if(!data.nome) return toast("Informe o nome", true);
-      if(c.id) await Store.update("clientes", c.id, data); else await Store.add("clientes", data);
+      if(c.id) await Store.update("clientes", c.id, data);
+      else     await Store.add("clientes", data);
       closeModal(); toast("Cliente salvo");
     };
   }
