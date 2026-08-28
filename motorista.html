@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>MedConnect · Motorista</title>
   <meta name="theme-color" content="#12243f" />
+  <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="assets/logo-icon.png" />
   <link rel="stylesheet" href="motorista.css" />
 </head>
@@ -83,5 +84,28 @@
   <div id="toast" class="toast hidden"></div>
 
   <script type="module" src="js/motorista.js"></script>
+
+  <script>
+    if("serviceWorker" in navigator){
+      window.addEventListener("load", ()=>{
+        navigator.serviceWorker.register("./sw.js").catch(()=>{});
+      });
+      const banner = ()=>{
+        let el = document.getElementById("offline-banner");
+        if(!navigator.onLine){
+          if(!el){
+            el = document.createElement("div");
+            el.id = "offline-banner";
+            el.style.cssText = "position:fixed;bottom:0;left:0;right:0;background:#e0a010;color:#fff;text-align:center;padding:12px;font-weight:700;z-index:999;font-size:14px";
+            el.textContent = "📡 Você está offline — o app continua funcionando.";
+            document.body.appendChild(el);
+          }
+        } else { el?.remove(); }
+      };
+      window.addEventListener("online", banner);
+      window.addEventListener("offline", banner);
+      banner();
+    }
+  </script>
 </body>
 </html>
