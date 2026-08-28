@@ -26,7 +26,7 @@ function pageWrap(view, titulo, sub, btnLabel, onNew){
 /* ===================== CLIENTES ===================== */
 export async function renderClientes(view){
   pageWrap(view,"Clientes","Base de clientes, endereços e relatórios por período","Novo cliente",()=>formCliente());
-  Store.watch("clientes", lista => {
+  Store.watch("clientes", lista => {lista = [...lista].sort((a,b)=>(a.nome||"").localeCompare(b.nome||"","pt-BR"));
     const draw = (data)=> {
       $("#list").innerHTML = tabela({
         head:["Nome","Contato","Endereço comercial","Voltagem",""],
@@ -364,7 +364,7 @@ export async function renderMotoristas(view){
 /* ===================== FORNECEDORES ===================== */
 export async function renderFornecedores(view){
   pageWrap(view,"Fornecedores / Parceiros","Gestão de sublocação de equipamentos externos","Novo parceiro",()=>form());
-  Store.watch("fornecedores", lista=>{
+  Store.watch("fornecedores", lista=>{lista = [...lista].sort((a,b)=>(a.nome||"").localeCompare(b.nome||"","pt-BR"));
     $("#list").innerHTML = tabela({
       head:["Nome","Contato","Equipamentos",""],
       rows: lista.map(f=>`
@@ -397,7 +397,7 @@ export async function renderFornecedores(view){
 /* ===================== EQUIPAMENTOS ===================== */
 export async function renderEquipamentos(view){
   pageWrap(view,"Equipamentos","Frota própria e sublocada","Novo equipamento",()=>form());
-  Store.watch("equipamentos", lista=>{
+  Store.watch("equipamentos", lista=>{lista = [...lista].sort((a,b)=>(a.modelo||"").localeCompare(b.modelo||"","pt-BR"));
     $("#list").innerHTML = tabela({
       head:["Modelo","Série","QR Code","Tecnologia","Frota","Acessórios",""],
       rows: lista.map(e=>`
