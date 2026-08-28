@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>MedConnect · Motorista</title>
+  <meta name="theme-color" content="#12243f" />
+  <link rel="icon" href="assets/logo-icon.png" />
+  <link rel="stylesheet" href="motorista.css" />
+</head>
+<body>
+
+  <!-- ===================== LOGIN PIN ===================== -->
+  <div id="pin-screen" class="pin-screen">
+    <img src="assets/logo-branco.png" alt="MedConnect" class="pin-logo" />
+    <div class="pin-sub">App do Motorista</div>
+    <div class="pin-box">
+      <h2 id="pin-title">Digite seu código</h2>
+      <p>Use o PIN fornecido pela administração</p>
+      <div class="pin-display" id="pin-display">
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+        <div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div class="pin-pad" id="pin-pad">
+        <button class="pin-key" data-k="1">1</button>
+        <button class="pin-key" data-k="2">2</button>
+        <button class="pin-key" data-k="3">3</button>
+        <button class="pin-key" data-k="4">4</button>
+        <button class="pin-key" data-k="5">5</button>
+        <button class="pin-key" data-k="6">6</button>
+        <button class="pin-key" data-k="7">7</button>
+        <button class="pin-key" data-k="8">8</button>
+        <button class="pin-key" data-k="9">9</button>
+        <button class="pin-key action" data-k="clear">limpar</button>
+        <button class="pin-key" data-k="0">0</button>
+        <button class="pin-key action" data-k="back">⌫</button>
+      </div>
+      <div class="pin-error" id="pin-error"></div>
+    </div>
+  </div>
+
+  <!-- ===================== APP ===================== -->
+  <div id="app" class="app hidden">
+    <header class="topo">
+      <div class="ola">
+        <small>Olá, motorista</small>
+        <strong id="mot-nome">—</strong>
+      </div>
+      <button class="sino" id="btn-sino">🔔<span class="contador hidden" id="sino-contador">0</span></button>
+      <button class="sino-sair" id="btn-sair" title="Sair">⎋</button>
+    </header>
+
+    <!-- Filtros rápidos -->
+    <div class="filtros" id="filtros">
+      <button class="chip active" data-f="hoje">Hoje</button>
+      <button class="chip" data-f="amanha">Amanhã</button>
+      <button class="chip" data-f="semana">Esta semana</button>
+      <button class="chip" data-f="pendentes">Pendentes</button>
+      <button class="chip" data-f="todos">Todas</button>
+      <button class="chip" data-f="data">Escolher data ▾</button>
+    </div>
+    <div class="filtro-data-row hidden" id="filtro-data-row">
+      <input type="date" id="filtro-data" />
+    </div>
+
+    <!-- Lista de rotas -->
+    <main class="rotas" id="rotas"></main>
+  </div>
+
+  <!-- ===================== DRAWER NOTIFICAÇÕES ===================== -->
+  <div id="drawer-bg" class="drawer-bg hidden"></div>
+  <aside id="drawer" class="drawer hidden">
+    <div class="drawer-topo">
+      <h3>Notificações</h3>
+      <button id="drawer-close">×</button>
+    </div>
+    <div class="drawer-lista" id="drawer-lista"></div>
+  </aside>
+
+  <!-- ===================== TELA CHECKLIST ===================== -->
+  <div id="checklist-tela" class="tela-cheia hidden"></div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script type="module" src="js/motorista.js"></script>
+</body>
+</html>
