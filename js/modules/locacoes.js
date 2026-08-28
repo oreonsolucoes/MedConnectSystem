@@ -7,7 +7,7 @@
    =================================================================== */
 import { Store } from "./store.js";
 import { $, BRL, fmtData, lucroLiquido, esc, openModal, closeModal, toast } from "./utils.js";
-import { calcularComissao } from "./responsaveis.js";
+// calcularComissao disponível via responsaveis.js (cálculo inline via dataset)
 
 export async function render(view){
   view.innerHTML = `
