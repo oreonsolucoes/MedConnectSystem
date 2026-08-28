@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>MedConnect · Popular Firestore</title>
+  <style>
+    body{ font-family:system-ui,sans-serif; max-width:800px; margin:40px auto; padding:0 20px; background:#f4f6fa; }
+    h1{ color:#0d4f8b; } h2{ color:#12243f; margin-top:28px; }
+    .card{ background:#fff; border-radius:12px; padding:20px; margin:16px 0; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+    button{ background:#0d4f8b; color:#fff; border:none; padding:12px 24px; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; margin:6px; }
+    button:hover{ background:#0a3a66; } button:disabled{ background:#94a3b8; cursor:not-allowed; }
+    .btn-danger{ background:#d6453d; } .btn-danger:hover{ background:#b03028; }
+    .btn-ok{ background:#1e9e6a; }
+    #log{ background:#12243f; color:#a9ffa9; font-family:monospace; font-size:13px; padding:16px; border-radius:10px; height:300px; overflow-y:auto; white-space:pre-wrap; margin-top:16px; }
+    .stat{ display:inline-block; background:#e8f1fa; color:#0d4f8b; padding:6px 14px; border-radius:20px; font-weight:700; font-size:13px; margin:4px; }
+    .warn{ background:#fdf3dc; color:#8a6100; padding:12px 16px; border-radius:8px; font-size:13.5px; margin:10px 0; }
+  </style>
+</head>
+<body>
+  <h1>🔧 MedConnect · Popular Firestore</h1>
+  <p>Este script importa todos os dados reais da planilha de locações (Abril, Maio e Junho/2026) para o Firebase Firestore.</p>
+
+  <div class="warn">⚠️ <strong>Atenção:</strong> Execute apenas uma vez. Se rodar novamente, os dados serão duplicados. Use o botão "Limpar coleção" antes de re-importar.</div>
+
+  <div class="card">
+    <h2>Resumo dos dados</h2>
+    <span class="stat">📅 96 locações</span>
+    <span class="stat">👥 6 clientes base</span>
+    <span class="stat">🚗 5 motoristas</span>
+    <span class="stat">🔬 5 equipamentos</span>
+  </div>
+
+  <div class="card">
+    <h2>Ações</h2>
+    <button id="btn-seed">▶ Importar todos os dados</button>
+    <button id="btn-limpar" class="btn-danger">🗑️ Limpar coleção de locações</button>
+    <button id="btn-motoristas">👤 Importar motoristas + PINs</button>
+    <div id="log">Aguardando...</div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBAt7gHv0EBES4ZHbfZN0fhnQGBTjqMXog",
+      authDomain: "medconnect-36c91.firebaseapp.com",
+      projectId: "medconnect-36c91",
+      storageBucket: "medconnect-36c91.firebasestorage.app",
+      messagingSenderId: "587460819432",
+      appId: "1:587460819432:web:d4494a581de6316ce94c5d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+    const log = document.getElementById("log");
+
+    function print(msg){ log.textContent += "\n" + msg; log.scrollTop = log.scrollHeight; }
+    function fmtData(str){ return str ? str.slice(0,10) : ""; }
+    function brl(v){ return isNaN(+v) ? 0 : +v; }
+
+    /* ===================== MOTORISTAS ===================== */
+    const MOTORISTAS = [
+      { nome:"Roni",     contato:"(11) 91111-0001", vinculo:"Fixo",    pin:"1001" },
+      { nome:"Anderson", contato:"(11) 91111-0002", vinculo:"Fixo",    pin:"1002" },
+      { nome:"Mikael",   contato:"(11) 91111-0003", vinculo:"Avulso",  pin:"1003" },
+      { nome:"Bruno",    contato:"(11) 91111-0004", vinculo:"Opção A", pin:"1004" },
+      { nome:"Roseli",   contato:"(11) 91111-0005", vinculo:"Opção B", pin:"1005" },
+      { nome:"Isaac",    contato:"(11) 91111-0006", vinculo:"Avulso",  pin:"1006" },
+      { nome:"Rubiana",  contato:"(11) 91111-0007", vinculo:"Avulso",  pin:"1007" },
+    ];
+
+    /* ===================== LOCAÇÕES ===================== */
+    const LOCACOES = [
+      // ========== ABRIL ==========
+      { data:"2026-04-02", horario:"10h às 18h", periodo:"8h",  responsavel:"Rubiana", cliente:"Dra Vivian",             endereco:"",                                                                          tecnologia:"Smart",   motorista:"Roni",     custoTransporte:270,  valorCliente:270,   motoristaCusto:270,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-04-04", horario:"9h às 20h",  periodo:"11h", responsavel:"Rubiana", cliente:"Dra Priscila Betoni",    endereco:"Rua República do Iraque, 1280 - Campo Belo - SP",                           tecnologia:"Smart",   motorista:"Roni",     custoTransporte:240,  valorCliente:1000,  motoristaCusto:240,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-04-04", horario:"8h às 15h",  periodo:"7h",  responsavel:"Vilma",   cliente:"Jaqueline",              endereco:"Rua Angelo Bianchy, 168 - Centro - Osasco - SP",                             tecnologia:"Qclean",  motorista:"Roni",     custoTransporte:200,  valorCliente:599.9, motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-04-06", horario:"10h às 20h", periodo:"10h", responsavel:"Isaac",   cliente:"Dra Anna - SBC",         endereco:"Av. Kennedy, 27 - Sala 41 - São Bernardo do Campo - SP",                    tecnologia:"Smart",   motorista:"Roni",     custoTransporte:240,  valorCliente:1400,  motoristaCusto:240,  statusPgto:"Pago",      frota:"propria", tecnica:true,  custoTecnica:200 },
+      { data:"2026-04-09", horario:"12h às 18h40",periodo:"8h", responsavel:"Vilma",   cliente:"Dra Louise",             endereco:"Av. Cauaxi, 293 - Sl 2519 - Alphaville - Barueri - SP",                    tecnologia:"Smart",   motorista:"Anderson", custoTransporte:200,  valorCliente:1200,  motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-04-11", horario:"10:30 às 16:30",periodo:"6h",responsavel:"Rubiana",cliente:"Dra Geissi",             endereco:"Rua das Verbenas, 169A - Vila Lucia - SP",                                  tecnologia:"Qclean",  motorista:"Roseli",   custoTransporte:200,  valorCliente:599,   motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-04-11", horario:"9h às 17h",   periodo:"8h", responsavel:"Vilma",   cliente:"Dra Miriam Bonora",      endereco:"Rua José Jannareli, 105 - Vila Progredir - Morumbi - SP",                   tecnologia:"Smart",   motorista:"Anderson", custoTransporte:200,  valorCliente:1400,  motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:true,  custoTecnica:600 },
+      { data:"2026-04-13", horario:"9h às 17h",   periodo:"8h", responsavel:"Rubiana", cliente:"Dra Fabiola - MTZ40",    endereco:"Guaratinguetá - SP",                                                         tecnologia:"MTZ40",   motorista:"Roni",     custoTransporte:1840, valorCliente:2650,  motoristaCusto:1840, statusPgto:"Pago",      frota:"sublocado",tecnica:false,custoTecnica:0   },
+      { data:"2026-04-14", horario:"8h às 12h",   periodo:"4h", responsavel:"Vilma",   cliente:"Dra Deise Carvalho",     endereco:"Av. Giovanni Gronchi, 6195 - Sl 1310/1311 - Vila Andrade - SP",              tecnologia:"MTZ40",   motorista:"Bruno",    custoTransporte:910,  valorCliente:1400,  motoristaCusto:910,  statusPgto:"Pago",      frota:"sublocado",tecnica:false,custoTecnica:0   },
+      { data:"2026-04-16", horario:"12:30 às 15:30",periodo:"3h",responsavel:"Rubiana",cliente:"Isabela Reis",           endereco:"",                                                                          tecnologia:"MTZ40",   motorista:"Bruno",    custoTransporte:1050, valorCliente:1500,  motoristaCusto:1050, statusPgto:"Pago",      frota:"sublocado",tecnica:false,custoTecnica:0   },
+      { data:"2026-04-17", horario:"9h às 16h",   periodo:"6h", responsavel:"Vilma",   cliente:"Dra Bianca Oliveira",    endereco:"Avenida da Saudade, 3177 - Centro - Cosmópolis - SP",                       tecnologia:"Qclean",  motorista:"Roseli",   custoTransporte:500,  valorCliente:1000,  motoristaCusto:500,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-04-17", horario:"10h às 19h",  periodo:"9h", responsavel:"Vilma",   cliente:"Duane Ronchi",           endereco:"Rua Jurubatuba, 1350 - Centro - São Bernardo do Campo - SP",                 tecnologia:"Smart",   motorista:"Anderson", custoTransporte:300,  valorCliente:980,   motoristaCusto:300,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-04-18", horario:"9h às 15h",   periodo:"6h", responsavel:"Vilma",   cliente:"Dra Keyla Mádia",        endereco:"Rua Narciso Sturlini, 62 - Sl 1018 - Osasco - SP",                          tecnologia:"Smart",   motorista:"Bruno",    custoTransporte:840,  valorCliente:1100,  motoristaCusto:840,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-04-18", horario:"9h às 17h",   periodo:"8h", responsavel:"Vilma",   cliente:"Dra Renata Endo",        endereco:"Rua Dionísia Alves Barreto, 500 - Sl 901 - Osasco - SP",                    tecnologia:"Smart",   motorista:"Roseli",   custoTransporte:218,  valorCliente:1200,  motoristaCusto:218,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-04-22", horario:"9h às 20h",   periodo:"11h",responsavel:"Vilma",   cliente:"Nilson",                 endereco:"R. Maestro Isaías Sávio, 315 - Jd Paraguaçu - Sapopemba - SP",              tecnologia:"Qclean",  motorista:"Roseli",   custoTransporte:200,  valorCliente:750,   motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-04-24", horario:"13h às 19h",  periodo:"6h", responsavel:"Vilma",   cliente:"Dra Alice Cabral",       endereco:"Praça Maastrich, 200 - Torre 2 - Sl 204 - Jd São José - Bragança Paulista - SP",tecnologia:"Smart",  motorista:"Roni",     custoTransporte:1100, valorCliente:1500,  motoristaCusto:1100, statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-04-25", horario:"9h às 17h",   periodo:"8h", responsavel:"Vilma",   cliente:"Graciele",               endereco:"Av. Kumaki Aoki, 497 - Jd Helena - Zona Leste - SP",                        tecnologia:"Qclean",  motorista:"Anderson", custoTransporte:200,  valorCliente:699.9, motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-04-25", horario:"9h às 18h",   periodo:"10h",responsavel:"Vilma",   cliente:"Dra Sandra Biodynk",     endereco:"Rua Tupi, 32 - Belém - Francisco Morato - SP",                              tecnologia:"Smart",   motorista:"Roni",     custoTransporte:920,  valorCliente:1400,  motoristaCusto:920,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-04-26", horario:"9:30 às 13:30",periodo:"4h",responsavel:"Vilma",   cliente:"Sheila Machado",         endereco:"Rua Eduardo Ewert, 221 - Real Park Tietê - Mogi das Cruzes - SP",            tecnologia:"MTZ40",   motorista:"Bruno",    custoTransporte:720,  valorCliente:979,   motoristaCusto:720,  statusPgto:"Pago",      frota:"sublocado",tecnica:false,custoTecnica:0   },
+      { data:"2026-04-26", horario:"13:30 às 17:30",periodo:"4h",responsavel:"Vilma",  cliente:"Dra Fernanda Brito",     endereco:"Av. Yara, 154 - Sl 01 - Vila Yara - Osasco - SP",                           tecnologia:"Smart",   motorista:"Bruno",    custoTransporte:720,  valorCliente:1503,  motoristaCusto:720,  statusPgto:"Pago",      frota:"propria", tecnica:true,  custoTecnica:600 },
+      { data:"2026-04-27", horario:"15h às 19h",  periodo:"4h", responsavel:"Vilma",   cliente:"Laurana Viana",          endereco:"Rua Epaminondas de Oliveira, 112 - Centro - São Roque - SP",                 tecnologia:"Qclean",  motorista:"Anderson", custoTransporte:300,  valorCliente:699.99,motoristaCusto:300,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-04-30", horario:"14h às 18h",  periodo:"4h", responsavel:"Vilma",   cliente:"Dra Cristina Dias",      endereco:"Jacareí - SP",                                                              tecnologia:"MTZ40",   motorista:"Bruno",    custoTransporte:1200, valorCliente:1700,  motoristaCusto:1200, statusPgto:"Pago",      frota:"sublocado",tecnica:false,custoTecnica:0   },
+      { data:"2026-04-30", horario:"14h às 18h",  periodo:"4h", responsavel:"Vilma",   cliente:"Michele Modema",         endereco:"Av. Vital Brasil, 305 - Sl 810 - Butantã - SP",                             tecnologia:"Smart",   motorista:"Anderson", custoTransporte:228,  valorCliente:1400,  motoristaCusto:228,  statusPgto:"Pago",      frota:"propria", tecnica:true,  custoTecnica:600 },
+
+      // ========== MAIO ==========
+      { data:"2026-05-02", horario:"9h às 15h",   periodo:"4h", responsavel:"Rubiana", cliente:"Dra Priscila Betoni",    endereco:"Rua República do Iraque, 1280 - Campo Belo - SP",                           tecnologia:"Smart",   motorista:"Anderson", custoTransporte:200,  valorCliente:1000,  motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-04", horario:"11h às 22h",  periodo:"11h",responsavel:"Isaac",   cliente:"Anna Karoline - SBC",    endereco:"Av. Antártico, 381 - Sala 57 - São Bernardo do Campo - SP",                  tecnologia:"Smart",   motorista:"Anderson", custoTransporte:250,  valorCliente:1500,  motoristaCusto:250,  statusPgto:"Pago",      frota:"propria", tecnica:true,  custoTecnica:300 },
+      { data:"2026-05-06", horario:"14h às 20h",  periodo:"6h", responsavel:"Rubiana", cliente:"Emilly Lacerda",         endereco:"Av. Francisco Conde, 59 - Vl. Rosália - Guarulhos - SP",                    tecnologia:"Qclean",  motorista:"Roni",     custoTransporte:220,  valorCliente:699,   motoristaCusto:220,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-08", horario:"10h às 14h",  periodo:"4h", responsavel:"Vilma",   cliente:"Aline Olivetto",         endereco:"Av. Chibarás, 75 - Sl 108 - Moema - SP",                                    tecnologia:"Lavieen", motorista:"Bruno",    custoTransporte:560,  valorCliente:700,   motoristaCusto:560,  statusPgto:"Pago",      frota:"sublocado",tecnica:false,custoTecnica:0   },
+      { data:"2026-05-09", horario:"8h às 14h",   periodo:"6h", responsavel:"Rubiana", cliente:"Ana Carolina",           endereco:"Rua Joaquim Pires de Oliveira, 80 - Sala 3 - Caucaia do Alto - SP",         tecnologia:"Qclean",  motorista:"Anderson", custoTransporte:300,  valorCliente:699.99,motoristaCusto:300,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-12", horario:"11h às 17h",  periodo:"6h", responsavel:"Rubiana", cliente:"Silvia Maciel",          endereco:"Open Mall The Square - Raposo Tavares, KM 22 - Bl A - Sl 402 - Cotia - SP", tecnologia:"Qclean",  motorista:"Anderson", custoTransporte:200,  valorCliente:599.99,motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-13", horario:"7:30 às 13:30",periodo:"6h",responsavel:"Vilma",   cliente:"Priscila - Bellure",     endereco:"Rua Rio Maicure, 184 - Jd da Glória - Cotia - SP",                          tecnologia:"Smart",   motorista:"Anderson", custoTransporte:200,  valorCliente:650,   motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-15", horario:"10h às 19h",  periodo:"6h", responsavel:"Vilma",   cliente:"Dra Louise",             endereco:"Av. Cauaxi, 293 - Sl 2519 - Alphaville - Barueri - SP",                    tecnologia:"Smart",   motorista:"Anderson", custoTransporte:200,  valorCliente:1200,  motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-16", horario:"10h às 14h",  periodo:"4h", responsavel:"Vilma",   cliente:"Tania - Jundiaí",        endereco:"Av. 9 de Julho, 3575 - Sl 702 - Anhangabaú - Jundiaí - SP",                 tecnologia:"Smart",   motorista:"Roni",     custoTransporte:280,  valorCliente:1480,  motoristaCusto:280,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-18", horario:"9:30 às 18h", periodo:"8h", responsavel:"Rubiana", cliente:"Fabiola - MTZ40",        endereco:"Guaratinguetá - SP",                                                         tecnologia:"MTZ40",   motorista:"Roni",     custoTransporte:1690, valorCliente:2350,  motoristaCusto:1690, statusPgto:"Pago",      frota:"sublocado",tecnica:false,custoTecnica:0   },
+      { data:"2026-05-19", horario:"9h às 13h",   periodo:"4h", responsavel:"Vilma",   cliente:"Ingrid Gastaldelli",     endereco:"Av. Regente Feijó, 944 - Cj 503B - Anália Franco - SP",                    tecnologia:"Smart",   motorista:"Anderson", custoTransporte:217,  valorCliente:799.99,motoristaCusto:217,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-20", horario:"14h às 18h",  periodo:"5h", responsavel:"Vilma",   cliente:"Dra Kenia",              endereco:"Rua Dr. Ramos de Azevedo, 159 - Sl 1416 - Centro - Guarulhos - SP",         tecnologia:"Smart",   motorista:"Mikael",   custoTransporte:230,  valorCliente:899.99,motoristaCusto:230,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-21", horario:"10h",         periodo:"",   responsavel:"Rubiana", cliente:"Giceli",                 endereco:"Rua Ezequiel Freire, 192 - Sala 60 - Santana - SP",                         tecnologia:"Qclean",  motorista:"Mikael",   custoTransporte:100,  valorCliente:699.99,motoristaCusto:100,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-21", horario:"10h às 20h",  periodo:"10h",responsavel:"Vilma",   cliente:"Fernanda Galbes",        endereco:"Rua Prof. José Benedito de Camargo, 371 - Vl Monteiro - Piracicaba - SP",  tecnologia:"Smart",   motorista:"Mikael",   custoTransporte:678,  valorCliente:1750,  motoristaCusto:678,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-22", horario:"10h às 20h",  periodo:"4h", responsavel:"Rubiana", cliente:"Silvia Regina",          endereco:"Rua Dr Cândido Motta Filho, 545 - Sala 42 - Shop Colinas - Osasco - SP",   tecnologia:"Smart",   motorista:"Mikael",   custoTransporte:221.99,valorCliente:1400, motoristaCusto:221.99,statusPgto:"Pago",     frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-23", horario:"10h às 15h",  periodo:"4h", responsavel:"Vilma",   cliente:"Pamela Oliveira",        endereco:"São Bernardo do Campo - SP",                                                tecnologia:"Smart",   motorista:"Mikael",   custoTransporte:200,  valorCliente:1000,  motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-23", horario:"9h às 20h",   periodo:"8h", responsavel:"Vilma",   cliente:"Nilson",                 endereco:"R. Maestro Isaías Sávio, 315 - Jd Paraguaçu - Sapopemba - SP",              tecnologia:"Qclean",  motorista:"Anderson", custoTransporte:200,  valorCliente:799.99,motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-25", horario:"13h às 19h",  periodo:"6h", responsavel:"Rubiana", cliente:"Priscila Eduardo",       endereco:"Alameda Grajaú, 98 - 805 - Alphaville - SP",                                tecnologia:"Qclean",  motorista:"Anderson", custoTransporte:200,  valorCliente:599.99,motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-27", horario:"14h às 18h",  periodo:"4h", responsavel:"Vilma",   cliente:"Rose Curso VIP",         endereco:"Av. Esperança, 1002 - Jd Progresso - Guarulhos - SP",                       tecnologia:"Smart",   motorista:"Mikael",   custoTransporte:200,  valorCliente:1503,  motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:true,  custoTecnica:600 },
+      { data:"2026-05-30", horario:"9h às 15h",   periodo:"6h", responsavel:"Vilma",   cliente:"Graciele",               endereco:"Av. Kumaki Aoki, 497 - Jd Helena - Zona Leste - SP",                        tecnologia:"Qclean",  motorista:"Mikael",   custoTransporte:280,  valorCliente:799.99,motoristaCusto:280,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-30", horario:"8h às 15h",   periodo:"7h", responsavel:"Vilma",   cliente:"Alessandra Flandes",     endereco:"Rua Dr. Ramos de Azevedo, 159 - Sl 914 - Centro - Guarulhos - SP",         tecnologia:"Smart",   motorista:"Anderson", custoTransporte:200,  valorCliente:1100,  motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-05-31", horario:"16h às 19h",  periodo:"5h", responsavel:"Vilma",   cliente:"Silvana Costa",          endereco:"Rua Padre Estevão Pernet, 1059 - Sl 51A - Tatuapé - SP",                   tecnologia:"Smart",   motorista:"Anderson", custoTransporte:100,  valorCliente:700,   motoristaCusto:100,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+
+      // ========== JUNHO ==========
+      { data:"2026-06-01", horario:"11h às 17h",  periodo:"6h", responsavel:"Vilma",   cliente:"Silvana Costa",          endereco:"Rua Padre Estevão Pernet, 1059 - Sl 51A - Tatuapé - SP",                   tecnologia:"Smart",   motorista:"Anderson", custoTransporte:100,  valorCliente:1000,  motoristaCusto:100,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-01", horario:"7h às 11h",   periodo:"4h", responsavel:"Vilma",   cliente:"Cristina Barros",        endereco:"Jacareí - SP",                                                              tecnologia:"MTZ40",   motorista:"Bruno",    custoTransporte:1200, valorCliente:1700,  motoristaCusto:1200, statusPgto:"Pago",      frota:"sublocado",tecnica:false,custoTecnica:0   },
+      { data:"2026-06-02", horario:"13h às 19h",  periodo:"6h", responsavel:"Vilma",   cliente:"Emilly Lacerda",         endereco:"Av. Francisco Conde, 59 - Vl. Rosália - Guarulhos - SP",                   tecnologia:"Qclean",  motorista:"Anderson", custoTransporte:200,  valorCliente:600,   motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-03", horario:"12h às 17h",  periodo:"5h", responsavel:"Vilma",   cliente:"Bianca Oliveira",        endereco:"Av. das Saudades, 3177 - Clínica Olive Place - Cosmópolis - SP",            tecnologia:"Qclean",  motorista:"Mikael",   custoTransporte:602,  valorCliente:899,   motoristaCusto:602,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-04", horario:"10h às 15h",  periodo:"5h", responsavel:"Vilma",   cliente:"Renata Endo",            endereco:"Rua Dionísia Alves Barreto, 500 - Sl 901 - Osasco - SP",                   tecnologia:"Smart",   motorista:"Anderson", custoTransporte:200,  valorCliente:1000,  motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-08", horario:"9h às 21h",   periodo:"12h",responsavel:"Vilma",   cliente:"Laruana",                endereco:"Rua Epaminondas de Oliveira, 112 - Interfone 6 - Centro - São Roque - SP",  tecnologia:"Qclean",  motorista:"Mikael",   custoTransporte:200,  valorCliente:800,   motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-08", horario:"9h às 21h",   periodo:"12h",responsavel:"Vilma",   cliente:"Laruana",                endereco:"Rua Epaminondas de Oliveira, 112 - Interfone 6 - Centro - São Roque - SP",  tecnologia:"Smart",   motorista:"Mikael",   custoTransporte:200,  valorCliente:1300,  motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-09", horario:"9h às 21h",   periodo:"12h",responsavel:"Vilma",   cliente:"Laruana",                endereco:"Rua Epaminondas de Oliveira, 112 - Interfone 6 - Centro - São Roque - SP",  tecnologia:"Deep",    motorista:"Bruno",    custoTransporte:730,  valorCliente:1000,  motoristaCusto:730,  statusPgto:"Pago",      frota:"sublocado",tecnica:false,custoTecnica:0   },
+      { data:"2026-06-13", horario:"8h às 14h",   periodo:"6h", responsavel:"Rubiana", cliente:"Ana Carolina",           endereco:"Rua Joaquim Pires de Oliveira, 80 - Sala 3 - Caucaia do Alto - SP",         tecnologia:"Qclean",  motorista:"Anderson", custoTransporte:300,  valorCliente:799.99,motoristaCusto:300,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-14", horario:"12h às 16h",  periodo:"4h", responsavel:"Vilma",   cliente:"Sara da Silva",          endereco:"Rua Dep. Queiroz Teles, 270 - Vila Romanópolis - Ferraz de Vasconcelos - SP",tecnologia:"Smart",  motorista:"Anderson", custoTransporte:300,  valorCliente:1583,  motoristaCusto:300,  statusPgto:"Pago",      frota:"propria", tecnica:true,  custoTecnica:600 },
+      { data:"2026-06-15", horario:"9h às 19h",   periodo:"10h",responsavel:"Rubiana", cliente:"Dra Priscila Betoni",    endereco:"Av. Vida Nova, 28 - Sl 407 - Ala A - Jd Maria Rosa - Taboão da Serra - SP", tecnologia:"Smart",   motorista:"Anderson", custoTransporte:240,  valorCliente:1200,  motoristaCusto:240,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-16", horario:"9h às 18h",   periodo:"10h",responsavel:"Isaac",   cliente:"Bruno Albuquerque",      endereco:"Av. Nove de Julho, 2050 - Anhangabaú - Jundiaí - SP",                       tecnologia:"Smart",   motorista:"Mikael",   custoTransporte:300,  valorCliente:1300,  motoristaCusto:300,  statusPgto:"Pago",      frota:"propria", tecnica:true,  custoTecnica:170 },
+      { data:"2026-06-17", horario:"16h às 20h",  periodo:"4h", responsavel:"Carol",   cliente:"Luciana Alves",          endereco:"Rua Jaceru, 142 - Vila Gertrudes - SP",                                     tecnologia:"Smart",   motorista:"Mikael",   custoTransporte:200,  valorCliente:800,   motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:true,  custoTecnica:130 },
+      { data:"2026-06-18", horario:"9h às 19:30", periodo:"10h",responsavel:"Vilma",   cliente:"Alice - Bragança",       endereco:"Praça Maastrich, 200 - Torre 2 - Sl 204 - Jd São José - Bragança Paulista - SP",tecnologia:"Smart", motorista:"Mikael",   custoTransporte:507,  valorCliente:1700,  motoristaCusto:507,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-18", horario:"vai retirar", periodo:"",   responsavel:"Vilma",   cliente:"Renata Mendonça",        endereco:"Rua João Plácido Viana, 147 - Jd Esther Yolanda - SP",                     tecnologia:"Qclean",  motorista:"Anderson", custoTransporte:200,  valorCliente:599.99,motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-19", horario:"10h às 22h",  periodo:"12h",responsavel:"Carol",   cliente:"Katrieli",               endereco:"Av. Paulista, 2001 - Loja 10/11 - Consultório Raissa Castro - SP",           tecnologia:"Smart",   motorista:"Anderson", custoTransporte:100,  valorCliente:1600,  motoristaCusto:100,  statusPgto:"Pago",      frota:"propria", tecnica:true,  custoTecnica:200 },
+      { data:"2026-06-20", horario:"10:30 às 14:30",periodo:"4h",responsavel:"Carol",  cliente:"Katrieli",               endereco:"Av. Paulista, 2001 - Loja 10/11 - Consultório Raissa Castro - SP",           tecnologia:"Smart",   motorista:"Anderson", custoTransporte:100,  valorCliente:600,   motoristaCusto:100,  statusPgto:"Pago",      frota:"propria", tecnica:true,  custoTecnica:130 },
+      { data:"2026-06-20", horario:"12h às 17h",  periodo:"5h", responsavel:"Vilma",   cliente:"Keila Noqueli",          endereco:"Rua Dionísia Alves Barreto, 500 - Sl 901 - Osasco - SP",                   tecnologia:"Qclean",  motorista:"Anderson", custoTransporte:200,  valorCliente:599.99,motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-20", horario:"9h às 15h",   periodo:"6h", responsavel:"Vilma",   cliente:"Tania - Jundiaí",        endereco:"Av. 9 de Julho, 3575 - Sl 702 - Anhangabaú - Jundiaí - SP",                 tecnologia:"Smart",   motorista:"Roni",     custoTransporte:950,  valorCliente:1280,  motoristaCusto:950,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-22", horario:"9h às 17h",   periodo:"8h", responsavel:"Rubiana", cliente:"Fabiola - Guaratinguetá",endereco:"Guaratinguetá - SP",                                                         tecnologia:"MTZ40",   motorista:"Roni",     custoTransporte:1840, valorCliente:2650,  motoristaCusto:1840, statusPgto:"Pago",      frota:"sublocado",tecnica:false,custoTecnica:0   },
+      { data:"2026-06-22", horario:"15h às 19h",  periodo:"4h", responsavel:"Vilma",   cliente:"Natali Passos",          endereco:"Rua Duarte de Azevedo, 284 - Sala 132 - Santana - SP",                     tecnologia:"Smart",   motorista:"Bruno",    custoTransporte:700,  valorCliente:800,   motoristaCusto:700,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-23", horario:"11h às 17h",  periodo:"6h", responsavel:"Rubiana", cliente:"Silvia Maciel",          endereco:"Open Mall The Square - Raposo Tavares, KM 22 - Bl A - Sl 402 - Cotia - SP", tecnologia:"Qclean",  motorista:"Anderson", custoTransporte:200,  valorCliente:599,   motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-23", horario:"8h às 14h",   periodo:"6h", responsavel:"Vilma",   cliente:"Gisele Almeida",         endereco:"Rua Letícia Bonini, 282 - Loanda - Atibaia - SP",                           tecnologia:"Smart",   motorista:"Mikael",   custoTransporte:350,  valorCliente:1350,  motoristaCusto:350,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-25", horario:"9h às 20h",   periodo:"12h",responsavel:"Vilma",   cliente:"Nilson",                 endereco:"R. Maestro Isaías Sávio, 315 - Jd Paraguaçu - Sapopemba - SP",              tecnologia:"Qclean",  motorista:"Anderson", custoTransporte:200,  valorCliente:899.99,motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-25", horario:"14h às 18h",  periodo:"4h", responsavel:"Rubiana", cliente:"Michele Hernandes",      endereco:"Av. Cassandoca, 103 - Mooca - SP",                                          tecnologia:"Smart",   motorista:"Anderson", custoTransporte:200,  valorCliente:1480,  motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:true,  custoTecnica:480 },
+      { data:"2026-06-26", horario:"12:30 às 16:30",periodo:"4h",responsavel:"Vilma",  cliente:"Dra Louise",             endereco:"Av. Cauaxi, 293 - Sl 2519 - Alphaville - Barueri - SP",                    tecnologia:"Smart",   motorista:"Anderson", custoTransporte:200,  valorCliente:1000,  motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-26", horario:"13h às 18h",  periodo:"5h", responsavel:"Vilma",   cliente:"Laila",                  endereco:"Rua Harold Lloyd, 89 - 1º andar - Sala 5 - Jd Olímpia - Vargem Grande Paulista - SP",tecnologia:"Qclean",motorista:"Anderson",custoTransporte:300, valorCliente:700,   motoristaCusto:300,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-27", horario:"9:30 às 13:30",periodo:"4h",responsavel:"Vilma",   cliente:"Keyla Madia",            endereco:"Rua Narciso Sturlini, 62 - Sala 1018 - Osasco - SP",                        tecnologia:"Smart",   motorista:"Bruno",    custoTransporte:720,  valorCliente:1000,  motoristaCusto:720,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-27", horario:"9h às 21h",   periodo:"12h",responsavel:"Vilma",   cliente:"Susan Neto",             endereco:"Al. 1º Sarg. Basílio Nogueira da Costa, 343 - Pq Novo Mundo - SP",           tecnologia:"Smart",   motorista:"Anderson", custoTransporte:200,  valorCliente:1199,  motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-27", horario:"10h às 16h",  periodo:"6h", responsavel:"Vilma",   cliente:"Graciele",               endereco:"Av. Kumaki Aoki, 497 - Jd Helena - Zona Leste - SP",                        tecnologia:"Qclean",  motorista:"Mikael",   custoTransporte:280,  valorCliente:879,   motoristaCusto:280,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-28", horario:"9:30 às 14:30",periodo:"5h",responsavel:"Vilma",   cliente:"Sabrina Leite",          endereco:"Rua Vieira de Moraes, 1484 - Campo Belo - SP",                              tecnologia:"Smart",   motorista:"Anderson", custoTransporte:200,  valorCliente:899,   motoristaCusto:200,  statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+      { data:"2026-06-30", horario:"9h às 19h",   periodo:"8h", responsavel:"Vilma",   cliente:"Fernanda Galbes",        endereco:"Rua Prof. José Benedito de Camargo, 371 - Vl Monteiro - Piracicaba - SP",  tecnologia:"Smart",   motorista:"Anderson", custoTransporte:678.8,valorCliente:1750,  motoristaCusto:678.8,statusPgto:"Pago",      frota:"propria", tecnica:false, custoTecnica:0   },
+    ];
+
+    /* ===================== SEED ===================== */
+    document.getElementById("btn-seed").onclick = async()=>{
+      const btn = document.getElementById("btn-seed");
+      btn.disabled = true; log.textContent = "Iniciando importação...\n";
+      let ok = 0, err = 0;
+      for(const loc of LOCACOES){
+        try {
+          await addDoc(collection(db,"locacoes"), loc);
+          print(`✓ ${loc.data} · ${loc.cliente} · ${loc.tecnologia}`);
+          ok++;
+        } catch(e){ print(`✗ ERRO: ${e.message}`); err++; }
+      }
+      print(`\n=============================`);
+      print(`✅ ${ok} locações importadas · ❌ ${err} erros`);
+      btn.disabled = false;
+    };
+
+    /* ===================== MOTORISTAS ===================== */
+    document.getElementById("btn-motoristas").onclick = async()=>{
+      const btn = document.getElementById("btn-motoristas");
+      btn.disabled = true; log.textContent = "Importando motoristas...\n";
+      for(const m of MOTORISTAS){
+        try {
+          await addDoc(collection(db,"motoristas"), m);
+          print(`✓ ${m.nome} · PIN: ${m.pin}`);
+        } catch(e){ print(`✗ ERRO: ${e.message}`); }
+      }
+      print("\n✅ Motoristas importados!");
+      btn.disabled = false;
+    };
+
+    /* ===================== LIMPAR ===================== */
+    document.getElementById("btn-limpar").onclick = async()=>{
+      if(!confirm("Tem certeza? Isso apaga TODAS as locações do Firestore.")) return;
+      const btn = document.getElementById("btn-limpar");
+      btn.disabled = true; log.textContent = "Limpando coleção de locações...\n";
+      const snap = await getDocs(collection(db,"locacoes"));
+      let n = 0;
+      for(const d of snap.docs){ await deleteDoc(doc(db,"locacoes",d.id)); n++; }
+      print(`✅ ${n} locações removidas.`);
+      btn.disabled = false;
+    };
+  </script>
+</body>
+</html>
