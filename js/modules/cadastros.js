@@ -60,40 +60,66 @@ export async function renderClientes(view){
   function formCliente(c={}){
     openModal(c.id?"Editar cliente":"Novo cliente", `
       <div class="form-grid">
-        <div class="field full"><label>Nome</label><input id="f-nome" value="${esc(c.nome||"")}"></div>
-        <div class="field"><label>Tipo de documento</label>
+        <div class="field full"><label>Nome completo da clínica</label>
+          <input id="f-nome" value="${esc(c.nome||"")}" placeholder="Ex.: Clínica Bella Vita"></div>
+        <div class="field"><label>CPF / CNPJ</label>
           <select id="f-doc"><option ${c.doc==="CPF"?"selected":""}>CPF</option><option ${c.doc==="CNPJ"?"selected":""}>CNPJ</option></select></div>
-        <div class="field"><label>Número do documento</label><input id="f-documento" value="${esc(c.documento||"")}"></div>
+        <div class="field"><label>Número do documento</label>
+          <input id="f-documento" value="${esc(c.documento||"")}"></div>
+        <div class="field"><label>Nome do responsável da clínica</label>
+          <input id="f-resp-cli" value="${esc(c.responsavelClinica||"")}" placeholder="Nome de quem recebe"></div>
+        <div class="field"><label>Telefone / WhatsApp</label>
+          <input id="f-tel" value="${esc(c.telefone||"")}"></div>
 
         <!-- Busca de CEP -->
         <div class="field full" style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px">
-          <label style="color:var(--brand);font-size:13px;font-weight:700">📍 Endereço via CEP</label>
-          <div style="display:flex;gap:10px;margin-top:8px">
+          <label style="color:var(--brand);font-size:13px;font-weight:700">📍 Endereço comercial via CEP</label>
+          <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
             <input id="f-cep" value="${esc(c.cep||"")}" placeholder="00000-000" maxlength="9"
               style="width:150px;padding:9px 11px;border:1.5px solid var(--brand);border-radius:8px">
             <button class="btn btn-ghost btn-sm" id="btn-cep" type="button">🔍 Buscar CEP</button>
             <span id="cep-status" style="font-size:12px;color:var(--muted);align-self:center"></span>
           </div>
         </div>
-        <div class="field"><label>Rua / Logradouro</label><input id="f-rua" value="${esc(c.rua||"")}"></div>
-        <div class="field"><label>Número</label><input id="f-numero" value="${esc(c.numero||"")}" placeholder="Nº"></div>
-        <div class="field"><label>Complemento (sala, andar...)</label><input id="f-comp" value="${esc(c.complemento||"")}"></div>
-        <div class="field"><label>Bairro</label><input id="f-bairro" value="${esc(c.bairro||"")}"></div>
-        <div class="field"><label>Cidade</label><input id="f-cidade" value="${esc(c.cidade||"")}"></div>
-        <div class="field"><label>Estado</label><input id="f-estado" value="${esc(c.estado||"")}" maxlength="2"></div>
-        <div class="field full"><label>Endereço completo (gerado automaticamente)</label>
+        <div class="field"><label>Rua / Logradouro</label>
+          <input id="f-rua" value="${esc(c.rua||"")}"></div>
+        <div class="field"><label>Número</label>
+          <input id="f-numero" value="${esc(c.numero||"")}" placeholder="Nº"></div>
+        <div class="field"><label>Complemento (sala, andar...)</label>
+          <input id="f-comp" value="${esc(c.complemento||"")}"></div>
+        <div class="field"><label>Bairro</label>
+          <input id="f-bairro" value="${esc(c.bairro||"")}"></div>
+        <div class="field"><label>Cidade</label>
+          <input id="f-cidade" value="${esc(c.cidade||"")}"></div>
+        <div class="field"><label>Estado</label>
+          <input id="f-estado" value="${esc(c.estado||"")}" maxlength="2"></div>
+        <div class="field full"><label>Endereço comercial completo</label>
           <input id="f-com" value="${esc(c.endComercial||"")}"
             placeholder="Preenchido pelo CEP ou digite manualmente"></div>
+        <div class="field full"><label>Ponto de referência</label>
+          <input id="f-ref" value="${esc(c.pontoReferencia||"")}" placeholder="Ex.: Próximo ao metrô, portaria azul..."></div>
         <div class="field full"><label>Endereço residencial</label>
           <input id="f-res" value="${esc(c.endResidencial||"")}"></div>
 
         <div class="field"><label>Voltagem do local</label>
-          <input id="f-volt" value="${esc(c.voltagem||"")}" placeholder="110V / 220V"></div>
-        <div class="field"><label>Espaço físico</label><input id="f-esp" value="${esc(c.espaco||"")}"></div>
-        <div class="field full"><label>Restrições (acesso, elevador...)</label>
-          <input id="f-rest" value="${esc(c.restricoes||"")}"></div>
-        <div class="field"><label>Telefone / WhatsApp</label><input id="f-tel" value="${esc(c.telefone||"")}"></div>
-        <div class="field"><label>Horário de funcionamento</label><input id="f-hor" value="${esc(c.horario||"")}"></div>
+          <select id="f-volt">
+            <option value="" ${!c.voltagem?"selected":""}>Não informado</option>
+            <option value="110V" ${c.voltagem==="110V"?"selected":""}>110V</option>
+            <option value="220V" ${c.voltagem==="220V"?"selected":""}>220V</option>
+            <option value="110V/220V" ${c.voltagem==="110V/220V"?"selected":""}>110V e 220V</option>
+          </select></div>
+        <div class="field"><label>Horário de funcionamento</label>
+          <input id="f-hor" value="${esc(c.horario||"")}" placeholder="Ex.: Seg a Sex 9h–18h"></div>
+        <div class="field full"><label>Restrições de acesso (escada, elevador, peso...)</label>
+          <input id="f-rest" value="${esc(c.restricoes||"")}" placeholder="Ex.: Sem elevador, escada com 2 lances"></div>
+        <div class="field full"><label>Tem espaço para mesa do equipamento?</label>
+          <select id="f-espaco">
+            <option value="" ${!c.espaco?"selected":""}>Não informado</option>
+            <option value="Sim" ${c.espaco==="Sim"?"selected":""}>Sim</option>
+            <option value="Não" ${c.espaco==="Não"?"selected":""}>Não</option>
+            <option value="Parcial" ${c.espaco==="Parcial"?"selected":""}>Parcial (mesa pequena)</option>
+          </select></div>
+
         <div class="form-actions">
           <button class="btn btn-ghost" id="c-cancel">Cancelar</button>
           <button class="btn btn-primary" id="c-save">Salvar</button>
@@ -145,23 +171,25 @@ export async function renderClientes(view){
     $("#c-cancel").onclick = closeModal;
     $("#c-save").onclick = async ()=>{
       const data = {
-        nome:       $("#f-nome").value.trim(),
-        doc:        $("#f-doc").value,
-        documento:  $("#f-documento").value.trim(),
-        cep:        $("#f-cep").value.trim(),
-        rua:        $("#f-rua").value.trim(),
-        numero:     $("#f-numero").value.trim(),
-        complemento:$("#f-comp").value.trim(),
-        bairro:     $("#f-bairro").value.trim(),
-        cidade:     $("#f-cidade").value.trim(),
-        estado:     $("#f-estado").value.trim(),
-        endComercial: $("#f-com").value.trim(),
-        endResidencial:$("#f-res").value.trim(),
-        voltagem:   $("#f-volt").value.trim(),
-        espaco:     $("#f-esp").value.trim(),
-        restricoes: $("#f-rest").value.trim(),
-        telefone:   $("#f-tel").value.trim(),
-        horario:    $("#f-hor").value.trim()
+        nome:              $("#f-nome").value.trim(),
+        doc:               $("#f-doc").value,
+        documento:         $("#f-documento").value.trim(),
+        responsavelClinica:$("#f-resp-cli").value.trim(),
+        telefone:          $("#f-tel").value.trim(),
+        cep:               $("#f-cep").value.trim(),
+        rua:               $("#f-rua").value.trim(),
+        numero:            $("#f-numero").value.trim(),
+        complemento:       $("#f-comp").value.trim(),
+        bairro:            $("#f-bairro").value.trim(),
+        cidade:            $("#f-cidade").value.trim(),
+        estado:            $("#f-estado").value.trim(),
+        endComercial:      $("#f-com").value.trim(),
+        pontoReferencia:   $("#f-ref").value.trim(),
+        endResidencial:    $("#f-res").value.trim(),
+        voltagem:          $("#f-volt").value,
+        horario:           $("#f-hor").value.trim(),
+        restricoes:        $("#f-rest").value.trim(),
+        espaco:            $("#f-espaco").value
       };
       if(!data.nome) return toast("Informe o nome", true);
       if(c.id) await Store.update("clientes", c.id, data);
