@@ -1,13 +1,13 @@
 /* ===================================================================
    Módulo: Gestão de Locações
+   - Busca de cliente por nome (campo com filtro ao digitar)
+   - Sem campo "custo transporte" — apenas custo motorista
    - Comissão automática do responsável
    - Indisponibilidade do equipamento por horário
    - Custo do fornecedor na sublocação
-   - Valor padrão de transporte: R$ 200
    =================================================================== */
 import { Store } from "./store.js";
 import { $, BRL, fmtData, lucroLiquido, esc, openModal, closeModal, toast } from "./utils.js";
-// calcularComissao disponível via responsaveis.js (cálculo inline via dataset)
 
 export async function render(view){
   view.innerHTML = `
@@ -34,6 +34,9 @@ export async function render(view){
     Store.list("clientes"), Store.list("equipamentos"),
     Store.list("motoristas"), Store.list("responsaveis")
   ]);
+
+  // Ordena clientes A→Z para o select de busca
+  const clientesOrd = [...clientes].sort((a,b)=>(a.nome||"").localeCompare(b.nome||"","pt-BR"));
 
   $("#btn-new").onclick = ()=> form();
 
@@ -104,24 +107,45 @@ export async function render(view){
       `<option value="${e.id}" data-tec="${esc(e.tecnologia)}" data-frota="${e.frota}" ${l.equipamentoId===e.id?"selected":""}>${esc(e.modelo)} (${esc(e.serie)})</option>`
     ).join("");
 
+    // Cliente selecionado atual (para exibir no campo de busca ao editar)
+    const cliAtual = clientesOrd.find(c=>c.id===l.clienteId);
+
     openModal(l.id?"Editar locação":"Nova locação",`
       <div class="form-grid">
         <div class="field"><label>Data</label>
           <input type="date" id="l-data" value="${l.data||""}"></div>
         <div class="field"><label>Horário</label>
           <input id="l-hora" value="${esc(l.horario||"")}" placeholder="9h às 18h"></div>
-        <div class="field"><label>Qtde de horas (período)</label>
+        <div class="field"><label>Período (horas)</label>
           <input id="l-periodo" value="${esc(l.periodo||"")}" placeholder="Ex.: 8h"></div>
         <div class="field"><label>Responsável pela locação</label>
           <select id="l-resp"><option value="">Selecione...</option>${respOpts}</select></div>
         <div class="field full"><label>Comissão do responsável (R$)
-          <span style="font-size:11px;color:var(--muted);font-weight:400"> — preenchido automaticamente pelo cadastro</span></label>
+          <span style="font-size:11px;color:var(--muted);font-weight:400"> — preenchido automaticamente</span></label>
           <input type="number" id="l-comissao" value="${l.comissaoResponsavel||0}" style="background:#f1f5f9"></div>
-        <div class="field full"><label>Cliente</label>
-          <select id="l-cli"><option value="">Selecione...</option>${opt(clientes,"id",l.clienteId,"nome")}</select></div>
+
+        <!-- BUSCA DE CLIENTE POR NOME -->
+        <div class="field full">
+          <label>Cliente
+            <span style="font-size:11px;color:var(--muted);font-weight:400"> — digite para filtrar</span>
+          </label>
+          <div style="position:relative">
+            <input id="l-cli-busca" autocomplete="off"
+              value="${esc(cliAtual?.nome || l.cliente || "")}"
+              placeholder="Digite o nome do cliente..."
+              style="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:14px">
+            <input type="hidden" id="l-cli" value="${l.clienteId||""}">
+            <div id="l-cli-lista" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:200;
+              background:#fff;border:1.5px solid var(--brand);border-top:none;border-radius:0 0 10px 10px;
+              max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.12)">
+            </div>
+          </div>
+        </div>
+
         <div class="field full"><label>Endereço da entrega
-          <span style="font-size:11px;color:var(--muted);font-weight:400"> — preenchido pelo cadastro do cliente</span></label>
+          <span style="font-size:11px;color:var(--muted);font-weight:400"> — preenchido pelo cliente</span></label>
           <input id="l-end" value="${esc(l.endereco||"")}" readonly style="background:#f1f5f9;color:var(--text)"></div>
+
         <div class="field full"><label>Equipamento</label>
           <select id="l-eq"><option value="">Selecione...</option>${eqOpts}</select></div>
         <div id="aviso-conflito" style="display:none;grid-column:1/-1;background:#fbe4e2;color:#b03028;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600"></div>
@@ -137,8 +161,6 @@ export async function render(view){
           <input type="number" id="l-tecval" value="${l.custoTecnica||0}"></div>
         <div class="field full"><label>Motorista</label>
           <select id="l-mot"><option value="">Selecione...</option>${opt(motoristas,"id",l.motoristaId,"nome")}</select></div>
-        <div class="field"><label>Custo transporte (R$)</label>
-          <input type="number" id="l-transp" value="${l.custoTransporte??200}"></div>
         <div class="field"><label>Custo pago ao motorista (R$)</label>
           <input type="number" id="l-motcusto" value="${l.motoristaCusto??200}"></div>
         <div class="field"><label>Valor cobrado do cliente (R$)</label>
@@ -158,7 +180,56 @@ export async function render(view){
         </div>
       </div>`);
 
-    // Responsável → preenche comissão automaticamente
+    /* ---- Busca de cliente por nome ---- */
+    const inputBusca = $("#l-cli-busca");
+    const inputId    = $("#l-cli");
+    const listaCli   = $("#l-cli-lista");
+
+    function renderListaClientes(filtro=""){
+      const q = filtro.toLowerCase().trim();
+      const encontrados = q
+        ? clientesOrd.filter(c=>(c.nome||"").toLowerCase().includes(q))
+        : clientesOrd;
+
+      if(!encontrados.length){
+        listaCli.innerHTML = `<div style="padding:12px;color:#64748b;font-size:13px">Nenhum cliente encontrado</div>`;
+      } else {
+        listaCli.innerHTML = encontrados.map(c=>`
+          <div data-cli-id="${c.id}" data-cli-nome="${esc(c.nome)}"
+            style="padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #f1f5f9"
+            onmouseover="this.style.background='#f0f7ff'" onmouseout="this.style.background=''">
+            <strong>${esc(c.nome)}</strong>
+            ${c.endComercial?`<br><span style="font-size:11px;color:#64748b">${esc(c.endComercial)}</span>`:""}
+          </div>`).join("");
+
+        listaCli.querySelectorAll("[data-cli-id]").forEach(item=>{
+          item.onmousedown = e=>{
+            e.preventDefault();
+            const cli = clientesOrd.find(c=>c.id===item.dataset.cliId);
+            inputId.value    = cli.id;
+            inputBusca.value = cli.nome;
+            listaCli.style.display = "none";
+            // preenche endereço
+            $("#l-end").value = cli.endComercial||cli.endResidencial||"";
+            recalc();
+          };
+        });
+      }
+      listaCli.style.display = "";
+    }
+
+    inputBusca.oninput  = ()=> renderListaClientes(inputBusca.value);
+    inputBusca.onfocus  = ()=> renderListaClientes(inputBusca.value);
+    inputBusca.onblur   = ()=> setTimeout(()=>{ listaCli.style.display="none"; }, 200);
+
+    // Se editando — preenche endereço do cliente já selecionado
+    if(l.clienteId){
+      const cli = clientesOrd.find(c=>c.id===l.clienteId);
+      if(cli && !$("#l-end").value)
+        $("#l-end").value = cli.endComercial||cli.endResidencial||"";
+    }
+
+    /* ---- Responsável → comissão automática ---- */
     $("#l-resp").onchange = ()=>{
       const sel = $("#l-resp").selectedOptions[0];
       if(!sel||!sel.value) return;
@@ -172,93 +243,70 @@ export async function render(view){
       recalc();
     };
 
-    // Cliente → preenche endereço automaticamente
-    $("#l-cli").onchange = ()=>{
-      const cliId = $("#l-cli").value;
-      const cli = clientes.find(c=>c.id===cliId);
-      $("#l-end").value = cli ? (cli.endComercial||cli.endResidencial||"") : "";
-    };
-    if(l.clienteId && !l.endereco){
-      const cli = clientes.find(c=>c.id===l.clienteId);
-      if(cli) $("#l-end").value = cli.endComercial||cli.endResidencial||"";
-    }
-
-    // Equipamento → mostra campo de custo do fornecedor se sublocado + verifica conflito
+    /* ---- Equipamento → conflito + custo fornecedor ---- */
     const verificarConflito = async()=>{
       const eqSel = $("#l-eq").selectedOptions[0];
       if(!eqSel||!eqSel.value) return;
-
-      // campo custo fornecedor
-      const frota = eqSel.dataset.frota;
-      document.getElementById("campo-custo-forn").style.display = frota==="sublocado"?"":"none";
-
-      // verificação de conflito de horário
+      document.getElementById("campo-custo-forn").style.display =
+        eqSel.dataset.frota==="sublocado" ? "" : "none";
       const data = $("#l-data").value;
       const hor  = $("#l-hora").value;
       if(!data||!hor) return;
-
       const todasLoc = await Store.list("locacoes");
       const conflito = todasLoc.find(x=>
-        x.equipamentoId===eqSel.value &&
-        x.data===data &&
-        x.id !== (l.id||"") &&
-        x.horario // só verifica se tem horário
-      );
-
+        x.equipamentoId===eqSel.value && x.data===data &&
+        x.id!==(l.id||"") && x.horario);
       const aviso = document.getElementById("aviso-conflito");
       if(conflito){
         aviso.style.display="";
-        aviso.textContent = `⚠️ Equipamento já alocado nesta data para ${conflito.cliente} (${conflito.horario}). Confirme o horário antes de salvar.`;
+        aviso.textContent=`⚠️ Equipamento já alocado nesta data para ${conflito.cliente} (${conflito.horario}).`;
       } else {
         aviso.style.display="none";
       }
       recalc();
     };
-
-    $("#l-eq").onchange = verificarConflito;
+    $("#l-eq").onchange   = verificarConflito;
     $("#l-data").onchange = verificarConflito;
     $("#l-hora").oninput  = verificarConflito;
 
-    // Recálculo do lucro
+    /* ---- Recálculo do lucro (sem custoTransporte) ---- */
     const recalc = ()=>{
-      const val    = +$("#l-valor").value||0;
-      const transp = +$("#l-transp").value||0;
-      const tec    = +$("#l-tecval").value||0;
-      const mot    = +$("#l-motcusto").value||0;
-      const comis  = +$("#l-comissao").value||0;
-      const forn   = +$("#l-forn")?.value||0;
-      const liq = val - transp - tec - mot - comis - forn;
+      const val   = +$("#l-valor").value||0;
+      const tec   = +$("#l-tecval").value||0;
+      const mot   = +$("#l-motcusto").value||0;
+      const comis = +$("#l-comissao").value||0;
+      const forn  = +$("#l-forn")?.value||0;
+      const liq   = val - tec - mot - comis - forn;
       $("#l-liq").value = BRL(liq);
       $("#l-liq").style.color = liq>=0?"var(--ok)":"var(--danger)";
     };
-
-    ["l-valor","l-transp","l-tecval","l-motcusto","l-comissao","l-forn"].forEach(id=>{
-      const el = $(  "#"+id); if(el) el.oninput = recalc;
+    ["l-valor","l-tecval","l-motcusto","l-comissao","l-forn"].forEach(id=>{
+      const el = $("#"+id); if(el) el.oninput = recalc;
     });
     recalc();
 
-    // Inicializa campo de fornecedor se editando sublocado
     if(l.frota==="sublocado") document.getElementById("campo-custo-forn").style.display="";
 
     $("#l-cancel").onclick = closeModal;
     $("#l-save").onclick = async()=>{
       const eqSel  = $("#l-eq").selectedOptions[0];
-      const cliSel = $("#l-cli").selectedOptions[0];
       const motSel = $("#l-mot").selectedOptions[0];
       const respSel= $("#l-resp").selectedOptions[0];
+      const cliId  = $("#l-cli").value;
+      const cliObj = clientesOrd.find(c=>c.id===cliId);
 
       if(!$("#l-data").value) return toast("Informe a data",true);
-      if(!$("#l-cli").value)  return toast("Selecione o cliente",true);
+      if(!cliId)              return toast("Selecione o cliente",true);
 
       const data = {
         data:       $("#l-data").value,
         horario:    $("#l-hora").value.trim(),
         periodo:    $("#l-periodo").value.trim(),
-        responsavelId: $("#l-resp").value,
-        responsavel:   respSel ? respSel.textContent : "Vilma",
+        responsavelId:       $("#l-resp").value,
+        responsavel:         respSel?.value ? respSel.textContent : "Vilma",
         comissaoResponsavel: +$("#l-comissao").value||0,
-        clienteId:  $("#l-cli").value,
-        cliente:    cliSel ? cliSel.textContent : "—",
+        clienteId:  cliId,
+        cliente:    cliObj?.nome || inputBusca.value.trim() || "—",
         endereco:   $("#l-end").value.trim(),
         equipamentoId: $("#l-eq").value,
         tecnologia: eqSel ? eqSel.dataset.tec : "—",
@@ -267,8 +315,8 @@ export async function render(view){
         tecnica:    $("#l-tec").value==="sim",
         custoTecnica: +$("#l-tecval").value||0,
         motoristaId: $("#l-mot").value,
-        motorista:  motSel ? motSel.textContent : "—",
-        custoTransporte: +$("#l-transp").value||0,
+        motorista:  motSel?.value ? motSel.textContent : "—",
+        custoTransporte: 0,
         motoristaCusto:  +$("#l-motcusto").value||0,
         valorCliente:    +$("#l-valor").value||0,
         statusPgto: $("#l-pgto").value
