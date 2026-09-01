@@ -195,6 +195,7 @@ function renderRotas(){
 
   $$("[data-entrega]").forEach(b=> b.onclick=()=> abrirChecklist(entregas.find(x=>x.id===b.dataset.entrega), "entrega"));
   $$("[data-retirada]").forEach(b=> b.onclick=()=> abrirChecklist(entregas.find(x=>x.id===b.dataset.retirada), "retirada"));
+  $$("[data-ver]").forEach(b=> b.onclick=()=> verMaisDetalhes(entregas.find(x=>x.id===b.dataset.ver)));
   $$("[data-maps]").forEach(b=> b.onclick=()=>
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.dataset.maps)}`,"_blank"));
   $$("[data-waze]").forEach(b=> b.onclick=()=>
@@ -245,10 +246,85 @@ function cardHTML(l){
     <div class="card-acoes">
       <button class="waze" data-waze="${esc(end)}">🧭 Waze</button>
       <button class="maps" data-maps="${esc(end)}">🗺️ Maps</button>
+      <button class="btn-ver-mais" data-ver="${l.id}" style="background:#f0f7ff;color:var(--brand);border:1.5px solid var(--brand);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">🔍 Ver mais</button>
       ${btnsChecklist}
     </div>
   </div>`;
 }
+/* =================================================================
+   VER MAIS DETALHES DA LOCAÇÃO
+   Abre painel com dados da clínica buscados no cadastro do cliente
+   ================================================================= */
+async function verMaisDetalhes(loc){
+  if(!loc) return;
+
+  // Busca dados completos do cliente no Firestore para pegar campos extras
+  let cli = null;
+  try {
+    const lista = await Store.list("clientes");
+    cli = lista.find(c=>
+      c.id === loc.clienteId ||
+      (c.nome||"").toLowerCase() === (loc.cliente||"").toLowerCase()
+    );
+  } catch(e){}
+
+  const s  = (v,fb="Não informado")=> v && v.trim() ? esc(v) : `<span style="color:#94a3b8">${fb}</span>`;
+  const end = loc.endereco || cli?.endComercial || cli?.endResidencial || "";
+
+  const html = `
+    <div style="position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:500;display:flex;align-items:flex-end;justify-content:center" id="ver-mais-overlay">
+      <div style="background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;padding:24px 20px 40px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+          <div>
+            <div style="font-size:12px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:.05em">Detalhes da locação</div>
+            <div style="font-size:20px;font-weight:800;color:#12243f;margin-top:2px">${esc(loc.cliente)}</div>
+          </div>
+          <button id="ver-mais-fechar" style="background:#f1f5f9;border:none;width:36px;height:36px;border-radius:10px;font-size:20px;cursor:pointer">×</button>
+        </div>
+
+        <div style="display:grid;gap:12px">
+          ${item("🏥","Nome da clínica", s(loc.cliente))}
+          ${item("📍","Endereço comercial", s(end))}
+          ${item("⚡","Voltagem", s(cli?.voltagem))}
+          ${item("🚧","Restrições de acesso", s(cli?.restricoes))}
+          ${item("📌","Ponto de referência", s(cli?.pontoReferencia))}
+          ${item("👤","Responsável da clínica", s(cli?.responsavelClinica))}
+          ${item("🕐","Horário de funcionamento", s(cli?.horario))}
+          ${item("📐","Espaço para mesa do equipamento?", s(cli?.espaco))}
+          ${cli?.telefone ? item("📞","Telefone", `<a href="tel:${esc(cli.telefone)}" style="color:var(--brand)">${esc(cli.telefone)}</a>`) : ""}
+        </div>
+
+        ${end ? `
+        <div style="display:flex;gap:10px;margin-top:20px">
+          <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(end)}','_blank')"
+            style="flex:1;background:#0d4f8b;color:#fff;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
+            🗺️ Abrir no Maps
+          </button>
+          <button onclick="window.open('https://waze.com/ul?q=${encodeURIComponent(end)}&navigate=yes','_blank')"
+            style="flex:1;background:#33ccff;color:#12243f;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
+            🧭 Abrir no Waze
+          </button>
+        </div>` : ""}
+      </div>
+    </div>`;
+
+  document.body.insertAdjacentHTML("beforeend", html);
+  document.getElementById("ver-mais-fechar").onclick = ()=> document.getElementById("ver-mais-overlay").remove();
+  document.getElementById("ver-mais-overlay").onclick = e=>{
+    if(e.target.id==="ver-mais-overlay") e.target.remove();
+  };
+}
+
+function item(ic, label, valor){
+  return `<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;display:flex;gap:12px;align-items:flex-start">
+    <span style="font-size:20px;flex-shrink:0">${ic}</span>
+    <div>
+      <div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">${label}</div>
+      <div style="font-size:14px;font-weight:600;color:#12243f">${valor}</div>
+    </div>
+  </div>`;
+}
+
 function brl(v){ return (Number(v)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"}); }
 
 /* =================================================================
