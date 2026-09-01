@@ -69,7 +69,9 @@ export async function renderClientes(view){
         <div class="field"><label>Nome do responsável da clínica</label>
           <input id="f-resp-cli" value="${esc(c.responsavelClinica||"")}" placeholder="Nome de quem recebe"></div>
         <div class="field"><label>Telefone / WhatsApp</label>
-          <input id="f-tel" value="${esc(c.telefone||"")}"></div>
+          <input id="f-tel" value="${esc(c.telefone||"")}" placeholder="(11) 9xxxx-xxxx"></div>
+        <div class="field"><label>E-mail</label>
+          <input type="email" id="f-email" value="${esc(c.email||"")}" placeholder="clinica@email.com"></div>
 
         <!-- Busca de CEP -->
         <div class="field full" style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px">
@@ -176,6 +178,7 @@ export async function renderClientes(view){
         documento:         $("#f-documento").value.trim(),
         responsavelClinica:$("#f-resp-cli").value.trim(),
         telefone:          $("#f-tel").value.trim(),
+        email:             $("#f-email").value.trim(),
         cep:               $("#f-cep").value.trim(),
         rua:               $("#f-rua").value.trim(),
         numero:            $("#f-numero").value.trim(),
