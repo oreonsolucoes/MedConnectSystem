@@ -60,7 +60,7 @@ export async function render(view){
               :'<span class="badge badge-frota">Própria</span>'}</td>
             <td>${esc(l.responsavel||"Vilma")}
               ${l.comissaoResponsavel>0?`<br><span style="font-size:11px;color:var(--warn)">Comissão: ${BRL(l.comissaoResponsavel)}</span>`:""}</td>
-            <td>${esc(l.motorista||"—")}</td>
+            <td>${esc(l.motorista||"—")}${l.motoristaCusto>0?`<br><span style="font-size:11px;color:var(--warn)">Custo: ${BRL(l.motoristaCusto)}</span>`:""}</td>
             <td class="text-right mono">${BRL(l.valorCliente)}</td>
             <td class="text-right mono"><strong>${BRL(lucroLiquido(l))}</strong></td>
             <td>${l.statusPgto==="Pago"
