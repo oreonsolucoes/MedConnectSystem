@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+  <title>MedConnect · Cadastro</title>
+  <meta name="theme-color" content="#0d4f8b"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,sans-serif;background:#f0f4fa;min-height:100vh;padding-bottom:40px}
+    .topo{background:linear-gradient(135deg,#0d4f8b,#12243f);padding:28px 20px 24px;text-align:center}
+    .topo img{height:48px;filter:brightness(0) invert(1);margin-bottom:12px;display:block;margin-left:auto;margin-right:auto}
+    .topo h1{color:#fff;font-size:20px;font-weight:800;margin-bottom:4px}
+    .topo p{color:#a9c8e8;font-size:13px}
+    .card{background:#fff;border-radius:16px;margin:20px 16px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+    .card h2{font-size:15px;font-weight:800;color:#12243f;margin-bottom:4px}
+    .card .sub{font-size:12.5px;color:#64748b;margin-bottom:18px;line-height:1.5}
+    .field{margin-bottom:14px}
+    label{display:block;font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+    label span{color:#e55;font-size:10px;margin-left:3px}
+    input,select,textarea{width:100%;padding:11px 13px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:15px;color:#12243f;background:#fff;outline:none;transition:border .15s}
+    input:focus,select:focus,textarea:focus{border-color:#0d4f8b;box-shadow:0 0 0 3px rgba(13,79,139,.1)}
+    textarea{resize:vertical;min-height:72px}
+    select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .btn{width:100%;padding:15px;background:#0d4f8b;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px;letter-spacing:.02em}
+    .btn:hover{background:#0a3a66}
+    .btn:disabled{background:#94a3b8;cursor:not-allowed}
+    .obrig{font-size:11px;color:#94a3b8;margin-top:8px;text-align:center}
+    .secao{font-size:12px;font-weight:700;color:#0d4f8b;text-transform:uppercase;letter-spacing:.06em;
+           border-bottom:2px solid #e8f1fa;padding-bottom:6px;margin:20px 0 14px}
+    .cep-row{display:flex;gap:8px}
+    .cep-row input{flex:1}
+    .cep-btn{background:#e8f1fa;color:#0d4f8b;border:1.5px solid #0d4f8b;border-radius:9px;padding:11px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+    .cep-btn:hover{background:#d0e5f7}
+    .cep-status{font-size:11px;color:#1e9e6a;margin-top:4px;min-height:14px}
+    #tela-sucesso{display:none;text-align:center;padding:40px 20px}
+    #tela-sucesso .ico{font-size:64px;margin-bottom:16px}
+    #tela-sucesso h2{color:#1e9e6a;font-size:22px;font-weight:800;margin-bottom:8px}
+    #tela-sucesso p{color:#64748b;font-size:14px;line-height:1.6}
+    #tela-erro{display:none;background:#fbe4e2;border-radius:12px;padding:16px;margin:16px;text-align:center;color:#b03028;font-weight:700;font-size:14px}
+    #tela-invalido{display:none;text-align:center;padding:60px 20px}
+    #tela-invalido .ico{font-size:56px;margin-bottom:16px}
+    #tela-invalido h2{color:#d6453d;font-size:20px;font-weight:800;margin-bottom:8px}
+    #tela-invalido p{color:#64748b;font-size:14px}
+  </style>
+</head>
+<body>
+  <div class="topo">
+    <img src="assets/logo.png" alt="MedConnect" onerror="this.style.display='none'"/>
+    <h1>Cadastro de Cliente</h1>
+    <p>Oreon Soluções · Tecnologia Estética</p>
+  </div>
+
+  <div id="tela-invalido">
+    <div class="ico">🔗</div>
+    <h2>Link inválido ou expirado</h2>
+    <p>Este link de cadastro não é válido.<br>Solicite um novo link pelo WhatsApp.</p>
+  </div>
+
+  <div id="tela-erro"></div>
+
+  <div id="tela-form">
+    <div class="card">
+      <h2>Olá! Seja bem-vindo(a) 👋</h2>
+      <p class="sub">Preencha seus dados abaixo para concluir seu cadastro no sistema da Oreon Soluções. Todas as informações são usadas exclusivamente para organizar suas locações de equipamento.</p>
+
+      <!-- DADOS DA CLÍNICA -->
+      <div class="secao">🏥 Dados da clínica</div>
+      <div class="field">
+        <label>Nome completo da clínica <span>*</span></label>
+        <input id="f-nome" placeholder="Ex.: Clínica Bella Vita" required/>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>CPF / CNPJ <span>*</span></label>
+          <input id="f-documento" placeholder="000.000.000-00"/>
+        </div>
+        <div class="field">
+          <label>Tipo</label>
+          <select id="f-doc">
+            <option value="CPF">CPF</option>
+            <option value="CNPJ">CNPJ</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Nome do responsável da clínica <span>*</span></label>
+        <input id="f-resp" placeholder="Quem recebe o equipamento"/>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Telefone / WhatsApp <span>*</span></label>
+          <input id="f-tel" type="tel" placeholder="(11) 9xxxx-xxxx"/>
+        </div>
+        <div class="field">
+          <label>E-mail</label>
+          <input id="f-email" type="email" placeholder="clinica@email.com"/>
+        </div>
+      </div>
+
+      <!-- ENDEREÇO -->
+      <div class="secao">📍 Endereço comercial</div>
+      <div class="field">
+        <label>CEP <span>*</span></label>
+        <div class="cep-row">
+          <input id="f-cep" placeholder="00000-000" maxlength="9" inputmode="numeric"/>
+          <button class="cep-btn" id="btn-cep" type="button">🔍 Buscar</button>
+        </div>
+        <div class="cep-status" id="cep-status"></div>
+      </div>
+      <div class="field">
+        <label>Rua / Logradouro <span>*</span></label>
+        <input id="f-rua" placeholder="Rua, Avenida..."/>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Número <span>*</span></label>
+          <input id="f-numero" placeholder="Nº"/>
+        </div>
+        <div class="field">
+          <label>Complemento</label>
+          <input id="f-comp" placeholder="Sala, andar, bloco..."/>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Bairro</label>
+          <input id="f-bairro"/>
+        </div>
+        <div class="field">
+          <label>Cidade <span>*</span></label>
+          <input id="f-cidade"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Ponto de referência</label>
+        <input id="f-ref" placeholder="Ex.: Próximo ao metrô, portaria azul..."/>
+      </div>
+
+      <!-- INFRAESTRUTURA -->
+      <div class="secao">⚙️ Infraestrutura</div>
+      <div class="row">
+        <div class="field">
+          <label>Voltagem <span>*</span></label>
+          <select id="f-volt">
+            <option value="">Selecione</option>
+            <option value="110V">110V</option>
+            <option value="220V">220V</option>
+            <option value="110V/220V">110V e 220V</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Espaço para mesa?</label>
+          <select id="f-espaco">
+            <option value="">Selecione</option>
+            <option value="Sim">Sim</option>
+            <option value="Não">Não</option>
+            <option value="Parcial">Parcial</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Restrições de acesso</label>
+        <input id="f-rest" placeholder="Ex.: Sem elevador, escada com 2 lances, portão estreito..."/>
+      </div>
+      <div class="field">
+        <label>Horário de funcionamento</label>
+        <input id="f-hor" placeholder="Ex.: Seg a Sex 9h–18h, Sáb 9h–13h"/>
+      </div>
+      <div class="field">
+        <label>Observações adicionais</label>
+        <textarea id="f-obs" placeholder="Qualquer informação útil para a entrega do equipamento..."></textarea>
+      </div>
+
+      <button class="btn" id="btn-enviar">✅ Enviar cadastro</button>
+      <p class="obrig">* Campos obrigatórios</p>
+    </div>
+  </div>
+
+  <div id="tela-sucesso" class="card" style="margin:20px 16px">
+    <div class="ico">🎉</div>
+    <h2>Cadastro enviado!</h2>
+    <p>Seus dados foram recebidos com sucesso.<br>A equipe Oreon Soluções entrará em contato em breve para confirmar sua locação.<br><br>Obrigado! 💙</p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, doc, getDoc, addDoc, updateDoc, serverTimestamp }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const cfg = {
+      apiKey:"AIzaSyBAt7gHv0EBES4ZHbfZN0fhnQGBTjqMXog",
+      authDomain:"medconnect-36c91.firebaseapp.com",
+      projectId:"medconnect-36c91",
+      storageBucket:"medconnect-36c91.firebasestorage.app",
+      messagingSenderId:"587460819432",
+      appId:"1:587460819432:web:d4494a581de6316ce94c5d"
+    };
+    const app = initializeApp(cfg);
+    const db  = getFirestore(app);
+
+    /* ---- Lê o token da URL ---- */
+    const params = new URLSearchParams(location.search);
+    const token  = params.get("t");
+
+    if(!token){
+      document.getElementById("tela-form").style.display = "none";
+      document.getElementById("tela-invalido").style.display = "";
+    } else {
+      init(token);
+    }
+
+    async function init(token){
+      try {
+        const convRef  = doc(db, "convites", token);
+        const convSnap = await getDoc(convRef);
+
+        if(!convSnap.exists()){
+          document.getElementById("tela-form").style.display = "none";
+          document.getElementById("tela-invalido").style.display = "";
+          return;
+        }
+
+        const convite = convSnap.data();
+
+        /* Já preenchido → mostra tela de sucesso direto */
+        if(convite.status === "preenchido"){
+          document.getElementById("tela-form").style.display = "none";
+          document.getElementById("tela-sucesso").style.display = "";
+          return;
+        }
+
+        /* Marca como "aberto" se ainda estava pendente */
+        if(convite.status === "pendente"){
+          await updateDoc(convRef, { status:"aberto", abertEm: serverTimestamp() });
+        }
+
+        /* Preenche nome/tel pré-definidos pelo admin */
+        if(convite.nomeCliente) document.getElementById("f-nome").value = convite.nomeCliente;
+        if(convite.telefone)    document.getElementById("f-tel").value  = convite.telefone;
+
+        setupForm(token, convRef);
+
+      } catch(e){
+        console.error(e);
+        document.getElementById("tela-erro").style.display = "";
+        document.getElementById("tela-erro").textContent = "Erro ao carregar o formulário. Verifique sua conexão e tente novamente.";
+      }
+    }
+
+    function setupForm(token, convRef){
+      /* Busca CEP */
+      const fmtCep = e=>{
+        let v = e.target.value.replace(/\D/g,"");
+        if(v.length>5) v = v.slice(0,5)+"-"+v.slice(5,8);
+        e.target.value = v;
+      };
+      document.getElementById("f-cep").oninput = fmtCep;
+
+      document.getElementById("btn-cep").onclick = async()=>{
+        const cep = document.getElementById("f-cep").value.replace(/\D/g,"");
+        const st  = document.getElementById("cep-status");
+        if(cep.length!==8){ st.textContent="CEP inválido"; st.style.color="#e55"; return; }
+        st.textContent = "Buscando..."; st.style.color="#64748b";
+        try {
+          const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+          const d = await r.json();
+          if(d.erro){ st.textContent="CEP não encontrado"; st.style.color="#e55"; return; }
+          document.getElementById("f-rua").value    = d.logradouro||"";
+          document.getElementById("f-bairro").value = d.bairro||"";
+          document.getElementById("f-cidade").value = d.localidade||"";
+          st.textContent = "✓ Endereço encontrado!"; st.style.color="#1e9e6a";
+          document.getElementById("f-numero").focus();
+          setTimeout(()=> st.textContent="", 3000);
+        } catch { st.textContent="Erro ao buscar CEP"; st.style.color="#e55"; }
+      };
+
+      /* Envio do formulário */
+      document.getElementById("btn-enviar").onclick = async()=>{
+        const btn = document.getElementById("btn-enviar");
+
+        /* Validação */
+        const nome = document.getElementById("f-nome").value.trim();
+        const resp = document.getElementById("f-resp").value.trim();
+        const tel  = document.getElementById("f-tel").value.trim();
+        const rua  = document.getElementById("f-rua").value.trim();
+        const num  = document.getElementById("f-numero").value.trim();
+        const cid  = document.getElementById("f-cidade").value.trim();
+        const volt = document.getElementById("f-volt").value;
+
+        if(!nome || !resp || !tel || !rua || !num || !cid || !volt){
+          document.getElementById("tela-erro").style.display = "";
+          document.getElementById("tela-erro").textContent = "⚠️ Preencha todos os campos obrigatórios (*)";
+          document.getElementById("tela-erro").scrollIntoView({behavior:"smooth"});
+          return;
+        }
+        document.getElementById("tela-erro").style.display = "none";
+
+        btn.disabled = true; btn.textContent = "Enviando...";
+
+        /* Monta endereço completo */
+        const partes = [rua, num,
+          document.getElementById("f-comp").value.trim(),
+          document.getElementById("f-bairro").value.trim(), cid].filter(Boolean);
+        const endCompleto = partes.join(", ");
+
+        /* Salva cliente no Firestore */
+        const cliente = {
+          nome,
+          doc:               document.getElementById("f-doc").value,
+          documento:         document.getElementById("f-documento").value.trim(),
+          responsavelClinica:resp,
+          telefone:          tel,
+          email:             document.getElementById("f-email").value.trim(),
+          cep:               document.getElementById("f-cep").value.trim(),
+          rua,
+          numero:            num,
+          complemento:       document.getElementById("f-comp").value.trim(),
+          bairro:            document.getElementById("f-bairro").value.trim(),
+          cidade:            cid,
+          endComercial:      endCompleto,
+          pontoReferencia:   document.getElementById("f-ref").value.trim(),
+          voltagem:          volt,
+          espaco:            document.getElementById("f-espaco").value,
+          restricoes:        document.getElementById("f-rest").value.trim(),
+          horario:           document.getElementById("f-hor").value.trim(),
+          observacoes:       document.getElementById("f-obs").value.trim(),
+          origem:            "auto-cadastro",
+          conviteToken:      token,
+          criadoEm:          serverTimestamp()
+        };
+
+        try {
+          await addDoc(collection(db,"clientes"), cliente);
+          /* Marca convite como preenchido */
+          await updateDoc(convRef, {
+            status: "preenchido",
+            preenchidoEm: serverTimestamp(),
+            nomePreenchido: nome
+          });
+          /* Mostra sucesso */
+          document.getElementById("tela-form").style.display  = "none";
+          document.getElementById("tela-sucesso").style.display = "";
+          window.scrollTo({top:0,behavior:"smooth"});
+        } catch(e){
+          console.error(e);
+          btn.disabled = false; btn.textContent = "✅ Enviar cadastro";
+          document.getElementById("tela-erro").style.display = "";
+          document.getElementById("tela-erro").textContent = "Erro ao enviar. Verifique sua conexão e tente novamente.";
+        }
+      };
+    }
+  </script>
+</body>
+</html>
