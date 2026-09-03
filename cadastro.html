@@ -18,70 +18,84 @@
     .field{margin-bottom:14px}
     label{display:block;font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
     label span{color:#e55;font-size:10px;margin-left:3px}
-    input,select,textarea{width:100%;padding:11px 13px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:15px;color:#12243f;background:#fff;outline:none;transition:border .15s}
+    input,select,textarea{width:100%;padding:11px 13px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:15px;color:#12243f;background:#fff;outline:none;transition:border .15s;-webkit-appearance:none}
     input:focus,select:focus,textarea:focus{border-color:#0d4f8b;box-shadow:0 0 0 3px rgba(13,79,139,.1)}
     textarea{resize:vertical;min-height:72px}
-    select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+    select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .btn{width:100%;padding:15px;background:#0d4f8b;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px;letter-spacing:.02em}
+    .btn{width:100%;padding:15px;background:#0d4f8b;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px;letter-spacing:.02em;-webkit-appearance:none}
     .btn:hover{background:#0a3a66}
     .btn:disabled{background:#94a3b8;cursor:not-allowed}
     .obrig{font-size:11px;color:#94a3b8;margin-top:8px;text-align:center}
-    .secao{font-size:12px;font-weight:700;color:#0d4f8b;text-transform:uppercase;letter-spacing:.06em;
-           border-bottom:2px solid #e8f1fa;padding-bottom:6px;margin:20px 0 14px}
-    .cep-row{display:flex;gap:8px}
-    .cep-row input{flex:1}
-    .cep-btn{background:#e8f1fa;color:#0d4f8b;border:1.5px solid #0d4f8b;border-radius:9px;padding:11px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+    .secao{font-size:12px;font-weight:700;color:#0d4f8b;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid #e8f1fa;padding-bottom:6px;margin:20px 0 14px}
+    .cep-row{display:flex;gap:8px;align-items:stretch}
+    .cep-row input{flex:1;min-width:0}
+    .cep-btn{background:#e8f1fa;color:#0d4f8b;border:1.5px solid #0d4f8b;border-radius:9px;padding:11px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;-webkit-appearance:none}
     .cep-btn:hover{background:#d0e5f7}
-    .cep-status{font-size:11px;color:#1e9e6a;margin-top:4px;min-height:14px}
-    #tela-sucesso{display:none;text-align:center;padding:40px 20px}
+    .cep-status{font-size:11px;margin-top:4px;min-height:14px}
+    /* Telas alternativas — todas ocultas por padrão via atributo hidden */
+    [hidden]{display:none!important}
+    #tela-sucesso{text-align:center;padding:40px 20px}
     #tela-sucesso .ico{font-size:64px;margin-bottom:16px}
     #tela-sucesso h2{color:#1e9e6a;font-size:22px;font-weight:800;margin-bottom:8px}
     #tela-sucesso p{color:#64748b;font-size:14px;line-height:1.6}
-    #tela-erro{display:none;background:#fbe4e2;border-radius:12px;padding:16px;margin:16px;text-align:center;color:#b03028;font-weight:700;font-size:14px}
-    #tela-invalido{display:none;text-align:center;padding:60px 20px}
+    #tela-erro{background:#fbe4e2;border-radius:12px;padding:16px;margin:0 0 14px;text-align:center;color:#b03028;font-weight:700;font-size:14px}
+    #tela-invalido{text-align:center;padding:60px 20px}
     #tela-invalido .ico{font-size:56px;margin-bottom:16px}
     #tela-invalido h2{color:#d6453d;font-size:20px;font-weight:800;margin-bottom:8px}
     #tela-invalido p{color:#64748b;font-size:14px}
+    #carregando{text-align:center;padding:60px 20px;color:#64748b}
+    #carregando .spinner{width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#0d4f8b;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+    @keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
+
   <div class="topo">
     <img src="assets/logo.png" alt="MedConnect" onerror="this.style.display='none'"/>
     <h1>Cadastro de Cliente</h1>
-    <p>Oreon Soluções · Tecnologia Estética</p>
+    <p>MedConnect · Tecnologia Estética</p>
   </div>
 
-  <div id="tela-invalido">
+  <!-- Spinner enquanto valida o token -->
+  <div id="carregando" class="card" style="margin:20px 16px">
+    <div class="spinner"></div>
+    Verificando link...
+  </div>
+
+  <!-- Link inválido -->
+  <div id="tela-invalido" hidden>
     <div class="ico">🔗</div>
     <h2>Link inválido ou expirado</h2>
     <p>Este link de cadastro não é válido.<br>Solicite um novo link pelo WhatsApp.</p>
   </div>
 
-  <div id="tela-erro"></div>
-
-  <div id="tela-form">
+  <!-- Formulário -->
+  <div id="tela-form" hidden>
     <div class="card">
       <h2>Olá! Seja bem-vindo(a) 👋</h2>
-      <p class="sub">Preencha seus dados abaixo para concluir seu cadastro no sistema da Oreon Soluções. Todas as informações são usadas exclusivamente para organizar suas locações de equipamento.</p>
+      <p class="sub">Preencha seus dados para concluir seu cadastro no sistema MedConnect. As informações são usadas exclusivamente para organizar suas locações de equipamento.</p>
+
+      <!-- Erro de validação -->
+      <div id="tela-erro" hidden></div>
 
       <!-- DADOS DA CLÍNICA -->
       <div class="secao">🏥 Dados da clínica</div>
       <div class="field">
         <label>Nome completo da clínica <span>*</span></label>
-        <input id="f-nome" placeholder="Ex.: Clínica Bella Vita" required/>
+        <input id="f-nome" placeholder="Ex.: Clínica Bella Vita"/>
       </div>
       <div class="row">
         <div class="field">
-          <label>CPF / CNPJ <span>*</span></label>
-          <input id="f-documento" placeholder="000.000.000-00"/>
-        </div>
-        <div class="field">
-          <label>Tipo</label>
+          <label>Tipo de documento</label>
           <select id="f-doc">
             <option value="CPF">CPF</option>
             <option value="CNPJ">CNPJ</option>
           </select>
+        </div>
+        <div class="field">
+          <label>CPF / CNPJ</label>
+          <input id="f-documento" placeholder="000.000.000-00"/>
         </div>
       </div>
       <div class="field">
@@ -116,11 +130,11 @@
       <div class="row">
         <div class="field">
           <label>Número <span>*</span></label>
-          <input id="f-numero" placeholder="Nº"/>
+          <input id="f-numero" placeholder="Nº" inputmode="numeric"/>
         </div>
         <div class="field">
           <label>Complemento</label>
-          <input id="f-comp" placeholder="Sala, andar, bloco..."/>
+          <input id="f-comp" placeholder="Sala, andar..."/>
         </div>
       </div>
       <div class="row">
@@ -162,7 +176,7 @@
       </div>
       <div class="field">
         <label>Restrições de acesso</label>
-        <input id="f-rest" placeholder="Ex.: Sem elevador, escada com 2 lances, portão estreito..."/>
+        <input id="f-rest" placeholder="Ex.: Sem elevador, escada com 2 lances..."/>
       </div>
       <div class="field">
         <label>Horário de funcionamento</label>
@@ -178,10 +192,13 @@
     </div>
   </div>
 
-  <div id="tela-sucesso" class="card" style="margin:20px 16px">
-    <div class="ico">🎉</div>
-    <h2>Cadastro enviado!</h2>
-    <p>Seus dados foram recebidos com sucesso.<br>A equipe Oreon Soluções entrará em contato em breve para confirmar sua locação.<br><br>Obrigado! 💙</p>
+  <!-- Sucesso -->
+  <div id="tela-sucesso" hidden>
+    <div class="card" style="margin:20px 16px;text-align:center;padding:40px 20px">
+      <div style="font-size:64px;margin-bottom:16px">🎉</div>
+      <h2 style="color:#1e9e6a;font-size:22px;font-weight:800;margin-bottom:8px">Cadastro enviado!</h2>
+      <p style="color:#64748b;font-size:14px;line-height:1.6">Seus dados foram recebidos com sucesso.<br>A equipe MedConnect entrará em contato em breve.<br><br>Obrigado! 💙</p>
+    </div>
   </div>
 
   <script type="module">
@@ -200,13 +217,16 @@
     const app = initializeApp(cfg);
     const db  = getFirestore(app);
 
-    /* ---- Lê o token da URL ---- */
+    const el = id => document.getElementById(id);
+    const show = id => el(id).removeAttribute("hidden");
+    const hide = id => el(id).setAttribute("hidden","");
+
     const params = new URLSearchParams(location.search);
     const token  = params.get("t");
 
     if(!token){
-      document.getElementById("tela-form").style.display = "none";
-      document.getElementById("tela-invalido").style.display = "";
+      hide("carregando");
+      show("tela-invalido");
     } else {
       init(token);
     }
@@ -216,116 +236,105 @@
         const convRef  = doc(db, "convites", token);
         const convSnap = await getDoc(convRef);
 
+        hide("carregando");
+
         if(!convSnap.exists()){
-          document.getElementById("tela-form").style.display = "none";
-          document.getElementById("tela-invalido").style.display = "";
-          return;
+          show("tela-invalido"); return;
         }
 
         const convite = convSnap.data();
 
-        /* Já preenchido → mostra tela de sucesso direto */
         if(convite.status === "preenchido"){
-          document.getElementById("tela-form").style.display = "none";
-          document.getElementById("tela-sucesso").style.display = "";
-          return;
+          show("tela-sucesso"); return;
         }
 
-        /* Marca como "aberto" se ainda estava pendente */
         if(convite.status === "pendente"){
           await updateDoc(convRef, { status:"aberto", abertEm: serverTimestamp() });
         }
 
-        /* Preenche nome/tel pré-definidos pelo admin */
-        if(convite.nomeCliente) document.getElementById("f-nome").value = convite.nomeCliente;
-        if(convite.telefone)    document.getElementById("f-tel").value  = convite.telefone;
+        if(convite.nomeCliente) el("f-nome").value = convite.nomeCliente;
+        if(convite.telefone)    el("f-tel").value  = convite.telefone;
 
+        show("tela-form");
         setupForm(token, convRef);
 
       } catch(e){
         console.error(e);
-        document.getElementById("tela-erro").style.display = "";
-        document.getElementById("tela-erro").textContent = "Erro ao carregar o formulário. Verifique sua conexão e tente novamente.";
+        hide("carregando");
+        show("tela-form");
+        show("tela-erro");
+        el("tela-erro").textContent = "Erro ao carregar. Verifique sua conexão.";
+        setupForm(token, null);
       }
     }
 
     function setupForm(token, convRef){
-      /* Busca CEP */
-      const fmtCep = e=>{
+      /* Formata CEP */
+      el("f-cep").oninput = e=>{
         let v = e.target.value.replace(/\D/g,"");
         if(v.length>5) v = v.slice(0,5)+"-"+v.slice(5,8);
         e.target.value = v;
       };
-      document.getElementById("f-cep").oninput = fmtCep;
 
-      document.getElementById("btn-cep").onclick = async()=>{
-        const cep = document.getElementById("f-cep").value.replace(/\D/g,"");
-        const st  = document.getElementById("cep-status");
+      /* Busca CEP */
+      el("btn-cep").onclick = async()=>{
+        const cep = el("f-cep").value.replace(/\D/g,"");
+        const st  = el("cep-status");
         if(cep.length!==8){ st.textContent="CEP inválido"; st.style.color="#e55"; return; }
-        st.textContent = "Buscando..."; st.style.color="#64748b";
+        st.textContent="Buscando..."; st.style.color="#64748b";
         try {
           const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
           const d = await r.json();
           if(d.erro){ st.textContent="CEP não encontrado"; st.style.color="#e55"; return; }
-          document.getElementById("f-rua").value    = d.logradouro||"";
-          document.getElementById("f-bairro").value = d.bairro||"";
-          document.getElementById("f-cidade").value = d.localidade||"";
-          st.textContent = "✓ Endereço encontrado!"; st.style.color="#1e9e6a";
-          document.getElementById("f-numero").focus();
+          el("f-rua").value    = d.logradouro||"";
+          el("f-bairro").value = d.bairro||"";
+          el("f-cidade").value = d.localidade||"";
+          st.textContent="✓ Endereço encontrado!"; st.style.color="#1e9e6a";
+          el("f-numero").focus();
           setTimeout(()=> st.textContent="", 3000);
         } catch { st.textContent="Erro ao buscar CEP"; st.style.color="#e55"; }
       };
 
-      /* Envio do formulário */
-      document.getElementById("btn-enviar").onclick = async()=>{
-        const btn = document.getElementById("btn-enviar");
+      /* Envio */
+      el("btn-enviar").onclick = async()=>{
+        const btn = el("btn-enviar");
+        const nome = el("f-nome").value.trim();
+        const resp = el("f-resp").value.trim();
+        const tel  = el("f-tel").value.trim();
+        const rua  = el("f-rua").value.trim();
+        const num  = el("f-numero").value.trim();
+        const cid  = el("f-cidade").value.trim();
+        const volt = el("f-volt").value;
 
-        /* Validação */
-        const nome = document.getElementById("f-nome").value.trim();
-        const resp = document.getElementById("f-resp").value.trim();
-        const tel  = document.getElementById("f-tel").value.trim();
-        const rua  = document.getElementById("f-rua").value.trim();
-        const num  = document.getElementById("f-numero").value.trim();
-        const cid  = document.getElementById("f-cidade").value.trim();
-        const volt = document.getElementById("f-volt").value;
-
-        if(!nome || !resp || !tel || !rua || !num || !cid || !volt){
-          document.getElementById("tela-erro").style.display = "";
-          document.getElementById("tela-erro").textContent = "⚠️ Preencha todos os campos obrigatórios (*)";
-          document.getElementById("tela-erro").scrollIntoView({behavior:"smooth"});
+        if(!nome||!resp||!tel||!rua||!num||!cid||!volt){
+          show("tela-erro");
+          el("tela-erro").textContent = "⚠️ Preencha todos os campos obrigatórios (*)";
+          el("tela-erro").scrollIntoView({behavior:"smooth",block:"center"});
           return;
         }
-        document.getElementById("tela-erro").style.display = "none";
+        hide("tela-erro");
+        btn.disabled=true; btn.textContent="Enviando...";
 
-        btn.disabled = true; btn.textContent = "Enviando...";
-
-        /* Monta endereço completo */
-        const partes = [rua, num,
-          document.getElementById("f-comp").value.trim(),
-          document.getElementById("f-bairro").value.trim(), cid].filter(Boolean);
-        const endCompleto = partes.join(", ");
-
-        /* Salva cliente no Firestore */
+        const partes = [rua,num,el("f-comp").value.trim(),el("f-bairro").value.trim(),cid].filter(Boolean);
         const cliente = {
           nome,
-          doc:               document.getElementById("f-doc").value,
-          documento:         document.getElementById("f-documento").value.trim(),
+          doc:               el("f-doc").value,
+          documento:         el("f-documento").value.trim(),
           responsavelClinica:resp,
           telefone:          tel,
-          email:             document.getElementById("f-email").value.trim(),
-          cep:               document.getElementById("f-cep").value.trim(),
-          rua,
-          numero:            num,
-          complemento:       document.getElementById("f-comp").value.trim(),
-          bairro:            document.getElementById("f-bairro").value.trim(),
+          email:             el("f-email").value.trim(),
+          cep:               el("f-cep").value.trim(),
+          rua, numero:num,
+          complemento:       el("f-comp").value.trim(),
+          bairro:            el("f-bairro").value.trim(),
           cidade:            cid,
-          endComercial:      endCompleto,
-          pontoReferencia:   document.getElementById("f-ref").value.trim(),
+          endComercial:      partes.join(", "),
+          pontoReferencia:   el("f-ref").value.trim(),
           voltagem:          volt,
-          espaco:            document.getElementById("f-espaco").value,
-          restricoes:        document.getElementById("f-rest").value.trim(),
-          horario:           document.getElementById("f-hor").value.trim(),
-          observacoes:       document.getElementById("f-obs").value.trim(),
+          espaco:            el("f-espaco").value,
+          restricoes:        el("f-rest").value.trim(),
+          horario:           el("f-hor").value.trim(),
+          observacoes:       el("f-obs").value.trim(),
           origem:            "auto-cadastro",
           conviteToken:      token,
           criadoEm:          serverTimestamp()
@@ -333,21 +342,19 @@
 
         try {
           await addDoc(collection(db,"clientes"), cliente);
-          /* Marca convite como preenchido */
-          await updateDoc(convRef, {
-            status: "preenchido",
-            preenchidoEm: serverTimestamp(),
-            nomePreenchido: nome
-          });
-          /* Mostra sucesso */
-          document.getElementById("tela-form").style.display  = "none";
-          document.getElementById("tela-sucesso").style.display = "";
+          if(convRef){
+            await updateDoc(convRef, {
+              status:"preenchido", preenchidoEm:serverTimestamp(), nomePreenchido:nome
+            });
+          }
+          hide("tela-form");
+          show("tela-sucesso");
           window.scrollTo({top:0,behavior:"smooth"});
         } catch(e){
           console.error(e);
-          btn.disabled = false; btn.textContent = "✅ Enviar cadastro";
-          document.getElementById("tela-erro").style.display = "";
-          document.getElementById("tela-erro").textContent = "Erro ao enviar. Verifique sua conexão e tente novamente.";
+          btn.disabled=false; btn.textContent="✅ Enviar cadastro";
+          show("tela-erro");
+          el("tela-erro").textContent="Erro ao enviar. Verifique sua conexão e tente novamente.";
         }
       };
     }
