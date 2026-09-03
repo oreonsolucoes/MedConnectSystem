@@ -6,6 +6,7 @@
    =================================================================== */
 import { Store } from "./store.js";
 import { $, esc, toast, BRL } from "./utils.js";
+import { USE_FIREBASE, db } from "../firebase-config.js";
 
 const BASE_URL = "https://oreonsolucoes.github.io/MedConnectSystem/cadastro.html";
 
@@ -125,17 +126,28 @@ export async function renderConvites(view){
       const link   = `${BASE_URL}?t=${token}`;
       const agora  = new Date().toISOString();
 
-      /* Salva convite no Firestore */
-      await Store.add("convites", {
-        token,
-        nomeCliente: nome,
-        telefone:    tel,
-        status:      "pendente",
-        link,
-        criadoEm:   agora,
-        abertEm:    null,
-        preenchidoEm: null
-      });
+      /* Salva convite usando o TOKEN como ID do documento
+         Assim o cadastro.html consegue buscar por doc(db,"convites",token) */
+      if(USE_FIREBASE){
+        const { doc, setDoc } = await import(
+          "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+        await setDoc(doc(db, "convites", token), {
+          token,
+          nomeCliente: nome,
+          telefone:    tel,
+          status:      "pendente",
+          link,
+          criadoEm:   agora,
+          abertEm:    null,
+          preenchidoEm: null
+        });
+      } else {
+        await Store.add("convites", {
+          token, nomeCliente:nome, telefone:tel,
+          status:"pendente", link, criadoEm:agora,
+          abertEm:null, preenchidoEm:null
+        });
+      }
 
       /* Mostra preview do link */
       document.getElementById("conv-link").textContent = link;
