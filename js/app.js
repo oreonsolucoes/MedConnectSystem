@@ -15,6 +15,7 @@ import {
   renderClientes, renderMotoristas, renderFornecedores, renderEquipamentos
 } from "./modules/cadastros.js";
 import { renderResponsaveis } from "./modules/responsaveis.js";
+import { renderConvites } from "./modules/convites.js";
 
 /* ---------------- Ícones SVG Lucide ---------------- */
 const ICO = {
