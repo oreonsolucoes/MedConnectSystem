@@ -153,7 +153,7 @@ export async function renderConvites(view){
       document.getElementById("conv-link").textContent = link;
       document.getElementById("conv-preview").style.display = "";
 
-      const msg = `Olá, ${nome}! 👋\n\nA Oreon Soluções preparou um link exclusivo para você concluir seu cadastro em nosso sistema de locação de tecnologia estética.\n\nAcesse aqui: ${link}\n\nÉ rápido e simples! Qualquer dúvida estamos à disposição. 💙`;
+      const msg = `Olá, ${nome}! \n\nA MedConnect preparou um link exclusivo para você concluir seu cadastro em nosso sistema de locação de tecnologia estética.\n\nAcesse aqui: ${link}\n\nÉ rápido e simples! Qualquer dúvida estamos à disposição!`;
 
       /* WhatsApp */
       document.getElementById("btn-whatsapp").onclick = ()=>{
