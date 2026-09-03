@@ -28,7 +28,8 @@ const ICO = {
   responsaveis: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 11l2 2 4-4"/></svg>`,
   fornecedores: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
   financeiro:   `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
-  levantamento: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="3" y1="20" x2="21" y2="20"/></svg>`
+  levantamento: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="3" y1="20" x2="21" y2="20"/></svg>`,
+  convites:     `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.99 12 19.79 19.79 0 0 1 1.93 3.37 2 2 0 0 1 3.92 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.61 5.61l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/><path d="M14.05 2a9 9 0 0 1 8 7.94"/><path d="M14.05 6A5 5 0 0 1 18 10"/></svg>`
 };
 
 /* ---------------- Rotas + permissões ---------------- */
@@ -42,13 +43,14 @@ const ROUTES = {
   responsaveis: { titulo:"Responsáveis", ico:ICO.responsaveis, perfis:["admin"],             render:(v)=>renderResponsaveis(v) },
   fornecedores: { titulo:"Fornecedores", ico:ICO.fornecedores, perfis:["admin"],             render:(v)=>renderFornecedores(v) },
   financeiro:   { titulo:"Financeiro",   ico:ICO.financeiro,   perfis:["admin"],             render:(v)=>Financeiro.render(v) },
-  levantamento: { titulo:"Levantamento", ico:ICO.levantamento, perfis:["admin"],             render:(v)=>Levantamento.render(v) }
+  levantamento: { titulo:"Levantamento", ico:ICO.levantamento, perfis:["admin"],             render:(v)=>Levantamento.render(v) },
+  convites:     { titulo:"Convites",     ico:ICO.convites,     perfis:["admin"],             render:(v)=>renderConvites(v) }
 };
 
 const NAV_SECTIONS = [
   { label:"Operação",  rotas:["dashboard","romaneio","locacoes"] },
   { label:"Cadastros", rotas:["clientes","equipamentos","motoristas","responsaveis","fornecedores"] },
-  { label:"Gestão",    rotas:["financeiro","levantamento"] }
+  { label:"Gestão",    rotas:["financeiro","levantamento","convites"] }
 ];
 
 let currentUser = null;
