@@ -72,7 +72,7 @@ a{ color:var(--brand); }
 .sidebar{ width:var(--sidebar-w); background:linear-gradient(180deg,var(--brand-navy),#0d1b30);
   color:#cdd8e6; display:flex; flex-direction:column; position:fixed; inset:0 auto 0 0; z-index:40; transition:width .2s; }
 .sidebar-head{ display:flex; align-items:center; justify-content:space-between; padding:16px 14px; border-bottom:1px solid rgba(255,255,255,.08); }
-.sidebar-logo{ width:150px; transition:.2s; display:block; object-fit:contain; max-height:48px; filter:brightness(0) invert(1); }
+.sidebar-logo{ width:150px; transition:.2s; display:block; object-fit:contain; max-height:48px; mix-blend-mode:screen; }
 .sidebar-toggle{ background:transparent; border:none; color:#cdd8e6; font-size:20px; }
 .sidebar-nav{ flex:1; padding:12px 8px; overflow-y:auto; }
 .nav-item{ display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:var(--radius-sm);
