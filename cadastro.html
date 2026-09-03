@@ -9,7 +9,7 @@
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:system-ui,-apple-system,sans-serif;background:#f0f4fa;min-height:100vh;padding-bottom:40px}
     .topo{background:linear-gradient(135deg,#0d4f8b,#12243f);padding:28px 20px 24px;text-align:center}
-    .topo img{height:48px;filter:brightness(0) invert(1);margin-bottom:12px;display:block;margin-left:auto;margin-right:auto}
+    .topo img{height:48px;mix-blend-mode:screen;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto}
     .topo h1{color:#fff;font-size:20px;font-weight:800;margin-bottom:4px}
     .topo p{color:#a9c8e8;font-size:13px}
     .card{background:#fff;border-radius:16px;margin:20px 16px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
@@ -52,7 +52,7 @@
 <body>
 
   <div class="topo">
-    <img src="assets/logo.png" alt="MedConnect" onerror="this.style.display='none'"/>
+    <img src="assets/logo.png" alt="MedConnect" onerror="this.style.display='none'" style="mix-blend-mode:screen;height:48px;margin-bottom:12px"/>
     <h1>Cadastro de Cliente</h1>
     <p>MedConnect · Tecnologia Estética</p>
   </div>
