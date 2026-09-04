@@ -556,11 +556,20 @@ async function salvarChecklist(loc, fase){
 
   if(pendentes.length){
     const st=$("#midia-status");
-    if(st) st.textContent=`Enviando ${pendentes.length} arquivo(s)...`;
+    const pct = n => Math.round((n/pendentes.length)*100);
+    if(st) st.textContent=`Enviando 0/${pendentes.length} (0%)...`;
     const resultados = await enviarVarios(
       pendentes.map(m=>m.file),
       { locId:loc.id, cliente:loc.cliente, data:loc.data, fase },
-      (i,total)=>{ if(st) st.textContent = i<total?`Enviando ${i+1}/${total}...`:"Envio concluído"; }
+      (i,total)=>{
+        const perc = pct(i);
+        if(st) st.textContent = i<total
+          ? `Enviando ${i+1}/${total} (${perc}%)...`
+          : "Envio concluído ✓";
+        btn.textContent = i<total
+          ? `Enviando ${i+1}/${total} (${perc}%)...`
+          : (fase==="entrega" ? "Salvando entrega..." : "Salvando retirada...");
+      }
     );
     resultados.forEach((r,idx)=>{
       if(r.ok){ pendentes[idx].enviado=true; midiaUrls.push({url:r.url,nome:r.nome,tipo:pendentes[idx].tipo,fase,simulado:!!r.simulado}); }
