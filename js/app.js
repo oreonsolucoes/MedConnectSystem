@@ -182,7 +182,7 @@ function bindGlobal(){
     $("#overlay").classList.add("hidden");
   };
   $("#modal-close").onclick = closeModal;
-  $("#modal").addEventListener("click", e=>{ if(e.target.id==="modal") closeModal(); });
+  // Fechar modal apenas pelo X — não fecha ao clicar fora
 }
 
 /* ==================== BOOTSTRAP ==================== */
