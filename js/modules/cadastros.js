@@ -195,8 +195,20 @@ export async function renderClientes(view){
         espaco:            $("#f-espaco").value
       };
       if(!data.nome) return toast("Informe o nome", true);
-      if(c.id) await Store.update("clientes", c.id, data);
-      else     await Store.add("clientes", data);
+      if(c.id){
+        await Store.update("clientes", c.id, data);
+        // Propaga mudança de nome para todas as locações deste cliente
+        if(data.nome !== c.nome){
+          const todasLoc = await Store.list("locacoes");
+          const paraAtualizar = todasLoc.filter(l => l.clienteId === c.id);
+          await Promise.all(paraAtualizar.map(l =>
+            Store.update("locacoes", l.id, { cliente: data.nome, endereco: data.endComercial || l.endereco })
+          ));
+          if(paraAtualizar.length) toast(`Nome atualizado em ${paraAtualizar.length} locação(ões)`);
+        }
+      } else {
+        await Store.add("clientes", data);
+      }
       closeModal(); toast("Cliente salvo");
     };
   }
