@@ -45,7 +45,13 @@ export async function render(view, currentUser){
             <td class="mono text-center">${esc(l.periodo||"—")}</td>
             <td>${esc(l.responsavel||"—")}</td>
             <td>${esc(l.motorista||"—")}</td>
-            <td>${l.checklistOk?'<span class="badge badge-ok">Concluído</span>':'<span class="badge badge-warn">Pendente</span>'}</td>
+            <td>${
+              l.checklistOk
+                ? '<span class="badge badge-ok">✓ Concluído</span>'
+                : l.checklistEntregaOk
+                  ? '<span class="badge" style="background:#e0f2fe;color:#0369a1">🚚 Entregue</span>'
+                  : '<span class="badge badge-warn">Pendente</span>'
+            }</td>
             <td class="text-right"><button class="btn btn-primary btn-sm" data-chk="${l.id}">📋 Check-list</button></td>
           </tr>`).join("") ||
           `<tr><td colspan="11" style="text-align:center;padding:26px" class="text-muted">Nenhuma entrega no período.</td></tr>`}
@@ -65,19 +71,23 @@ export async function render(view, currentUser){
   /* ---- Visualização somente leitura do check-list (visão admin) ---- */
   function visualizarChecklist(loc){
     const template = checklistTemplates[loc.tecnologia] || checklistGenerico;
-    const salvos   = loc.checklist || {};
-    const fase     = salvos._fase || "—";
-    const quando   = salvos._quando
-      ? new Date(salvos._quando).toLocaleString("pt-BR")
-      : null;
 
-    /* Seções de itens — somente leitura (checkboxes disabled) */
-    const secoes = Object.entries(template).map(([sec, itens])=>{
-      const marcados = salvos[sec] || [];
-      const total    = itens.length;
-      const ok       = marcados.length;
-      return `
-        <div class="chk-section">
+    /* Renderiza uma fase (entrega ou retirada) do checklist */
+    function renderFase(salvos, tituloFase, corHeader){
+      if(!salvos || Object.keys(salvos).filter(k=>!k.startsWith("_")).length === 0){
+        return `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">
+          Checklist de ${tituloFase.toLowerCase()} ainda não preenchido.
+        </div>`;
+      }
+      const quando = salvos._quando
+        ? new Date(salvos._quando).toLocaleString("pt-BR")
+        : null;
+
+      const secoes = Object.entries(template).map(([sec, itens])=>{
+        const marcados = salvos[sec] || [];
+        const total = itens.length;
+        const ok = marcados.length;
+        return `<div class="chk-section">
           <h4 style="display:flex;justify-content:space-between;align-items:center">
             ${esc(sec)}
             <span style="font-size:12px;font-weight:600;color:${ok===total?"var(--ok)":"var(--warn)"}">
@@ -93,58 +103,70 @@ export async function render(view, currentUser){
             </div>`;
           }).join("")}
         </div>`;
-    }).join("");
+      }).join("");
 
-    /* Fotos/vídeos salvos no Drive */
-    const midias = salvos._midia || [];
-    const midiasHTML = midias.length
-      ? `<div class="chk-section">
-           <h4>📸 Fotos / Vídeos (${midias.length} arquivo${midias.length>1?"s":""})</h4>
-           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:8px">
-             ${midias.map(m=>`
-               <a href="${esc(m.url||"#")}" target="_blank" rel="noopener"
-                 style="display:block;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#f1f5f9;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--brand);text-decoration:none;padding:6px;text-align:center">
-                 ${m.tipo==="video"||m.nome?.match(/\.(mp4|mov|avi)$/i)?"🎬 ":"📷 "}
-                 ${esc(m.fase||"")}<br>
-                 <span style="font-size:10px;color:var(--muted);word-break:break-all">${esc(m.nome||"arquivo")}</span>
-               </a>`).join("")}
-           </div>
-         </div>`
-      : `<div class="chk-section"><h4>📸 Fotos / Vídeos</h4>
-           <p class="text-muted" style="font-size:13px">Nenhum arquivo enviado.</p></div>`;
+      const midias = salvos._midia || [];
+      const midiasHTML = midias.length
+        ? `<div class="chk-section">
+             <h4>📸 Fotos / Vídeos (${midias.length} arquivo${midias.length>1?"s":""})</h4>
+             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:8px">
+               ${midias.map(m=>`
+                 <a href="${esc(m.url||"#")}" target="_blank" rel="noopener"
+                   style="display:block;aspect-ratio:1;border-radius:10px;background:#f1f5f9;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--brand);text-decoration:none;padding:6px;text-align:center">
+                   ${m.tipo==="video"||m.nome?.match(/\.(mp4|mov|avi)$/i)?"🎬 ":"📷 "}<br>
+                   <span style="font-size:10px;color:var(--muted);word-break:break-all">${esc(m.nome||"arquivo")}</span>
+                 </a>`).join("")}
+             </div>
+           </div>`
+        : `<div class="chk-section"><h4>📸 Fotos / Vídeos</h4>
+             <p class="text-muted" style="font-size:13px">Nenhum arquivo enviado.</p></div>`;
 
-    /* Assinatura */
-    const assHTML = salvos._assinatura
-      ? `<div class="chk-section">
-           <h4>✍️ Assinatura do cliente</h4>
-           <img src="${salvos._assinatura}" style="max-width:100%;border:1px solid var(--line);border-radius:10px;background:#fcfdfe">
-         </div>`
-      : `<div class="chk-section"><h4>✍️ Assinatura do cliente</h4>
-           <p class="text-muted" style="font-size:13px">Não coletada.</p></div>`;
+      const assHTML = salvos._assinatura
+        ? `<div class="chk-section">
+             <h4>✍️ Assinatura do cliente</h4>
+             <img src="${salvos._assinatura}" style="max-width:100%;border:1px solid var(--line);border-radius:10px;background:#fcfdfe">
+           </div>`
+        : `<div class="chk-section"><h4>✍️ Assinatura do cliente</h4>
+             <p class="text-muted" style="font-size:13px">Não coletada.</p></div>`;
 
-    /* Observações */
-    const obsHTML = salvos._obs
-      ? `<div class="chk-section"><h4>📝 Observações</h4>
-           <p style="font-size:14px;white-space:pre-wrap">${esc(salvos._obs)}</p></div>`
-      : "";
+      const obsHTML = salvos._obs
+        ? `<div class="chk-section"><h4>📝 Observações</h4>
+             <p style="font-size:14px;white-space:pre-wrap">${esc(salvos._obs)}</p></div>`
+        : "";
+
+      return `
+        <div style="display:flex;align-items:center;gap:8px;margin:16px 0 6px;padding:8px 12px;border-radius:8px;background:${corHeader}">
+          <strong style="font-size:14px">${tituloFase}</strong>
+          ${quando?`<span style="font-size:11px;color:var(--muted)">· ${quando}</span>`:""}
+        </div>
+        ${secoes}${midiasHTML}${assHTML}${obsHTML}`;
+    }
+
+    const temEntrega  = !!loc.checklistEntregaOk;
+    const temRetirada = !!loc.checklistRetiradaOk;
+    const nada        = !temEntrega && !temRetirada;
+
+    const statusBadge = loc.checklistOk
+      ? '<span class="badge badge-ok">✓ Concluído</span>'
+      : temEntrega
+        ? '<span class="badge" style="background:#e0f2fe;color:#0369a1">🚚 Entregue</span>'
+        : '<span class="badge badge-warn">Pendente</span>';
 
     openModal(`📋 Check-list · ${esc(loc.cliente)}`, `
-      <div style="background:var(--brand-light);border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:12px;font-size:13px">
+      <div style="background:var(--brand-light);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:12px;font-size:13px">
         <span>🔬 <strong>${esc(loc.tecnologia)}</strong></span>
         <span>📅 ${fmtData(loc.data)} · ${esc(loc.horario||"—")}</span>
-        <span>🔄 Fase: <strong>${esc(fase)}</strong></span>
-        ${quando?`<span>🕒 Preenchido em ${quando}</span>`:""}
-        <span>${loc.checklistOk
-          ?'<span class="badge badge-ok">✓ Concluído</span>'
-          :'<span class="badge badge-warn">Pendente</span>'}</span>
+        ${statusBadge}
       </div>
 
-      ${!loc.checklistOk
+      ${nada
         ? `<div style="text-align:center;padding:30px;color:var(--muted)">
              <div style="font-size:40px">📋</div>
              <div style="margin-top:10px;font-weight:600">Check-list ainda não preenchido pelo motorista.</div>
            </div>`
-        : secoes + midiasHTML + assHTML + obsHTML}
+        : renderFase(loc.checklistEntrega, "🚚 Entrega", "#e0f2fe") +
+          (temRetirada ? renderFase(loc.checklistRetirada, "📦 Retirada", "#dcfce7") : "")
+      }
 
       <div class="form-actions">
         <button class="btn btn-primary" id="chk-fechar">Fechar</button>
