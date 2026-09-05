@@ -13,6 +13,7 @@ import {
   reconciliar, marcarTodasLidas, limparResolvidas, confirmarNotificacao, getFeed
 } from "./modules/notificacoes.js";
 import { enviarVarios, enviarEmBackground, previewURL, driveThumbURL, MODO_SIMULADO } from "./modules/drive-upload.js";
+import { registrarFCM, removerFCM } from "./modules/fcm.js";
 
 const $  = (s,c=document)=> c.querySelector(s);
 const $$ = (s,c=document)=> [...c.querySelectorAll(s)];
@@ -127,9 +128,12 @@ function entrar(m){
   $("#app").classList.remove("hidden");
   $("#mot-nome").textContent = m.nome;
   iniciarEscuta();
+  // Registra notificações push FCM (silencioso se não configurado)
+  if(USE_FIREBASE && m.id) registrarFCM(m.id, db);
 }
 
 function sair(){
+  if(USE_FIREBASE && motorista?.id) removerFCM(motorista.id, db);
   motorista = null; sessionStorage.removeItem("mc_mot");
   if(unsub) unsub();
   $("#app").classList.add("hidden");
