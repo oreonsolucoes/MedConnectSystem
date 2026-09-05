@@ -20,7 +20,7 @@ import { app } from "../firebase-config.js";
 /* ── VAPID key pública — obtida no Firebase Console ──
    Console → Project Settings → Cloud Messaging → Web Push certificates
    Clique em "Generate key pair" e cole aqui a chave pública */
-const VAPID_KEY = "COLE_AQUI_SUA_VAPID_KEY_PUBLICA";
+const VAPID_KEY = "BNMjiRSMvZjWV7io2rd9rn1sgPOEGQBHVvG9JwK51U9mW2tjui77PEVwjMrjVZ6A3v1OtQTzvlSKsDsQmtYWOIk";
 
 let messaging = null;
 
