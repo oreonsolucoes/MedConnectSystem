@@ -4,6 +4,7 @@
 import { Store } from "./store.js";
 import { $, $$, fmtData, diaSemana, esc, openModal, closeModal, toast } from "./utils.js";
 import { checklistTemplates, checklistGenerico } from "./mock-data.js";
+import { driveThumbURL } from "./drive-upload.js";
 
 export async function render(view, currentUser){
   const equipamentos = await Store.list("equipamentos");
@@ -72,21 +73,57 @@ export async function render(view, currentUser){
   function visualizarChecklist(loc){
     const template = checklistTemplates[loc.tecnologia] || checklistGenerico;
 
-    /* Renderiza uma fase (entrega ou retirada) do checklist */
-    function renderFase(salvos, tituloFase, corHeader){
-      if(!salvos || Object.keys(salvos).filter(k=>!k.startsWith("_")).length === 0){
-        return `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">
-          Checklist de ${tituloFase.toLowerCase()} ainda não preenchido.
-        </div>`;
-      }
-      const quando = salvos._quando
-        ? new Date(salvos._quando).toLocaleString("pt-BR")
-        : null;
+    /* Renderiza miniaturas clicáveis de fotos/vídeos */
+    function renderMidias(midias){
+      if(!midias.length)
+        return `<div class="chk-section"><h4>📸 Fotos / Vídeos</h4>
+          <p class="text-muted" style="font-size:13px">Nenhum arquivo enviado.</p></div>`;
 
-      const secoes = Object.entries(template).map(([sec, itens])=>{
+      const cards = midias.map(m=>{
+        const isVideo = m.tipo==="video" || m.nome?.match(/\.(mp4|mov|avi|webm)$/i);
+        const thumb   = driveThumbURL(m.url, m.driveId);
+        const link    = esc(m.url || "#");
+
+        if(isVideo){
+          // Vídeos: ícone grande clicável (thumbnail do Drive não funciona para vídeo)
+          return `<a href="${link}" target="_blank" rel="noopener"
+            title="${esc(m.nome||"vídeo")}"
+            style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+              aspect-ratio:1;border-radius:10px;background:#0f172a;border:1px solid var(--line);
+              color:#fff;text-decoration:none;font-size:11px;gap:4px;padding:6px;text-align:center">
+            <span style="font-size:32px">🎬</span>
+            <span style="opacity:.7;word-break:break-all;font-size:10px">${esc((m.nome||"vídeo").slice(0,20))}</span>
+          </a>`;
+        }
+
+        if(thumb){
+          return `<a href="${link}" target="_blank" rel="noopener" title="${esc(m.nome||"foto")}">
+            <img src="${esc(thumb)}" loading="lazy"
+              style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;
+                border:1px solid var(--line);display:block;background:#f1f5f9"
+              onerror="this.outerHTML='<div style=\'width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:10px;background:#f1f5f9;border:1px solid var(--line);font-size:28px\'>📷</div>'"
+            >
+          </a>`;
+        }
+
+        // Fallback sem URL útil
+        return `<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+            border-radius:10px;background:#f1f5f9;border:1px solid var(--line);font-size:28px">📷</div>`;
+      }).join("");
+
+      return `<div class="chk-section">
+        <h4>📸 Fotos / Vídeos (${midias.length} arquivo${midias.length>1?"s":""})</h4>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:8px">
+          ${cards}
+        </div>
+      </div>`;
+    }
+
+    /* Renderiza seções de itens de uma fase */
+    function renderSecoes(salvos){
+      return Object.entries(template).map(([sec, itens])=>{
         const marcados = salvos[sec] || [];
-        const total = itens.length;
-        const ok = marcados.length;
+        const ok = marcados.length, total = itens.length;
         return `<div class="chk-section">
           <h4 style="display:flex;justify-content:space-between;align-items:center">
             ${esc(sec)}
@@ -104,42 +141,36 @@ export async function render(view, currentUser){
           }).join("")}
         </div>`;
       }).join("");
+    }
 
-      const midias = salvos._midia || [];
-      const midiasHTML = midias.length
-        ? `<div class="chk-section">
-             <h4>📸 Fotos / Vídeos (${midias.length} arquivo${midias.length>1?"s":""})</h4>
-             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:8px">
-               ${midias.map(m=>`
-                 <a href="${esc(m.url||"#")}" target="_blank" rel="noopener"
-                   style="display:block;aspect-ratio:1;border-radius:10px;background:#f1f5f9;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--brand);text-decoration:none;padding:6px;text-align:center">
-                   ${m.tipo==="video"||m.nome?.match(/\.(mp4|mov|avi)$/i)?"🎬 ":"📷 "}<br>
-                   <span style="font-size:10px;color:var(--muted);word-break:break-all">${esc(m.nome||"arquivo")}</span>
-                 </a>`).join("")}
-             </div>
-           </div>`
-        : `<div class="chk-section"><h4>📸 Fotos / Vídeos</h4>
-             <p class="text-muted" style="font-size:13px">Nenhum arquivo enviado.</p></div>`;
+    /* Renderiza bloco de uma fase completa */
+    function renderFase(salvos, tituloFase, corHeader){
+      if(!salvos || !Object.keys(salvos).some(k=>!k.startsWith("_")))
+        return `<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">
+          Checklist de ${tituloFase.toLowerCase().replace(/[^a-záéíóúâêîôûãõ ]/gi,"")} ainda não preenchido.</div>`;
+
+      const quando = salvos._quando
+        ? new Date(salvos._quando).toLocaleString("pt-BR") : null;
 
       const assHTML = salvos._assinatura
-        ? `<div class="chk-section">
-             <h4>✍️ Assinatura do cliente</h4>
-             <img src="${salvos._assinatura}" style="max-width:100%;border:1px solid var(--line);border-radius:10px;background:#fcfdfe">
-           </div>`
+        ? `<div class="chk-section"><h4>✍️ Assinatura do cliente</h4>
+             <img src="${salvos._assinatura}" style="max-width:100%;border:1px solid var(--line);border-radius:10px;background:#fcfdfe"></div>`
         : `<div class="chk-section"><h4>✍️ Assinatura do cliente</h4>
              <p class="text-muted" style="font-size:13px">Não coletada.</p></div>`;
 
       const obsHTML = salvos._obs
         ? `<div class="chk-section"><h4>📝 Observações</h4>
-             <p style="font-size:14px;white-space:pre-wrap">${esc(salvos._obs)}</p></div>`
-        : "";
+             <p style="font-size:14px;white-space:pre-wrap">${esc(salvos._obs)}</p></div>` : "";
 
       return `
-        <div style="display:flex;align-items:center;gap:8px;margin:16px 0 6px;padding:8px 12px;border-radius:8px;background:${corHeader}">
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;
+          margin:14px 0 4px;border-radius:8px;background:${corHeader}">
           <strong style="font-size:14px">${tituloFase}</strong>
           ${quando?`<span style="font-size:11px;color:var(--muted)">· ${quando}</span>`:""}
         </div>
-        ${secoes}${midiasHTML}${assHTML}${obsHTML}`;
+        ${renderSecoes(salvos)}
+        ${renderMidias(salvos._midia||[])}
+        ${assHTML}${obsHTML}`;
     }
 
     const temEntrega  = !!loc.checklistEntregaOk;
@@ -153,7 +184,8 @@ export async function render(view, currentUser){
         : '<span class="badge badge-warn">Pendente</span>';
 
     openModal(`📋 Check-list · ${esc(loc.cliente)}`, `
-      <div style="background:var(--brand-light);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:12px;font-size:13px">
+      <div style="background:var(--brand-light);border-radius:10px;padding:12px 14px;
+        margin-bottom:8px;display:flex;flex-wrap:wrap;gap:12px;font-size:13px">
         <span>🔬 <strong>${esc(loc.tecnologia)}</strong></span>
         <span>📅 ${fmtData(loc.data)} · ${esc(loc.horario||"—")}</span>
         ${statusBadge}
