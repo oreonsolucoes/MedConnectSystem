@@ -12,7 +12,7 @@ import { checklistTemplates, checklistGenerico } from "./modules/mock-data.js";
 import {
   reconciliar, marcarTodasLidas, limparResolvidas, confirmarNotificacao, getFeed
 } from "./modules/notificacoes.js";
-import { enviarVarios, previewURL, MODO_SIMULADO } from "./modules/drive-upload.js";
+import { enviarVarios, enviarEmBackground, previewURL, driveThumbURL, MODO_SIMULADO } from "./modules/drive-upload.js";
 
 const $  = (s,c=document)=> c.querySelector(s);
 const $$ = (s,c=document)=> [...c.querySelectorAll(s)];
@@ -547,70 +547,105 @@ function iniciarAssinatura(){
 }
 
 async function salvarChecklist(loc, fase){
-  const btn=$("#ck-salvar"); btn.disabled=true;
-  btn.textContent = fase==="entrega" ? "Salvando entrega..." : "Salvando retirada...";
+  const btn = $("#ck-salvar");
+  btn.disabled = true;
 
-  /* Upload de mídias novas */
-  let midiaUrls = (loc[fase==="entrega"?"checklistEntrega":"checklistRetirada"]?._midia)||[];
-  const pendentes = midiaSelecionada.filter(m=> !m.enviado && m.file);
-
-  if(pendentes.length){
-    const st=$("#midia-status");
-    const pct = n => Math.round((n/pendentes.length)*100);
-    if(st) st.textContent=`Enviando 0/${pendentes.length} (0%)...`;
-    const resultados = await enviarVarios(
-      pendentes.map(m=>m.file),
-      { locId:loc.id, cliente:loc.cliente, data:loc.data, fase },
-      (i,total)=>{
-        const perc = pct(i);
-        if(st) st.textContent = i<total
-          ? `Enviando ${i+1}/${total} (${perc}%)...`
-          : "Envio concluído ✓";
-        btn.textContent = i<total
-          ? `Enviando ${i+1}/${total} (${perc}%)...`
-          : (fase==="entrega" ? "Salvando entrega..." : "Salvando retirada...");
-      }
-    );
-    resultados.forEach((r,idx)=>{
-      if(r.ok){ pendentes[idx].enviado=true; midiaUrls.push({url:r.url,nome:r.nome,tipo:pendentes[idx].tipo,fase,simulado:!!r.simulado}); }
-    });
-    renderMidia();
+  /* ── Barra de progresso no botão ── */
+  function btnProgress(pct, label){
+    btn.innerHTML = `
+      <span style="display:block;font-size:13px;margin-bottom:5px">${label}</span>
+      <div style="background:rgba(255,255,255,.3);border-radius:4px;height:7px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:#fff;border-radius:4px;transition:width .25s"></div>
+      </div>
+      <span style="font-size:11px;opacity:.85">${pct}%</span>`;
   }
 
-  /* Monta resultado da fase */
+  btnProgress(5, fase==="entrega" ? "Salvando entrega..." : "Salvando retirada...");
+
+  /* ── Monta itens marcados ── */
   const resultado = {};
   $$("#checklist-tela .item input:checked").forEach(cb=>{
     (resultado[cb.dataset.sec]||=[]).push(cb.dataset.item);
   });
-  resultado._midia       = midiaUrls;
-  resultado._assinatura  = temAss && cv ? cv.toDataURL("image/png") : "";
-  resultado._quando      = new Date().toISOString();
+  resultado._assinatura = temAss && cv ? cv.toDataURL("image/png") : "";
+  resultado._quando     = new Date().toISOString();
 
-  /* Campos a atualizar no Firestore */
+  /* URLs já salvas anteriormente (edição / segunda tentativa) */
+  resultado._midia = (loc[fase==="entrega"?"checklistEntrega":"checklistRetirada"]?._midia) || [];
+
+  /* ── Salva no Firestore IMEDIATAMENTE (sem esperar upload) ── */
   const update = {};
   if(fase === "entrega"){
     update.checklistEntrega   = resultado;
     update.checklistEntregaOk = true;
-    /* Retirada ainda não foi feita — garante que campo existe */
     if(!loc.checklistRetiradaOk) update.checklistRetiradaOk = false;
   } else {
     update.checklistRetirada   = resultado;
     update.checklistRetiradaOk = true;
-    update.checklistOk         = true; // ambas concluídas
+    update.checklistOk         = true;
   }
 
-  /* Tenta salvar — com persistência offline o Firestore enfileira se não tiver internet */
+  btnProgress(30, "Registrando no servidor...");
+
   try {
     await Store.update("locacoes", loc.id, update);
-    toast(fase==="entrega" ? "✓ Entrega confirmada!" : "✓ Retirada confirmada!","ok");
   } catch(e){
-    /* Provavelmente offline — o Firestore offline já enfileirou, mas avisa */
     toast("Salvo localmente — sincronizará quando conectar","");
     console.warn("Salvo offline:", e);
   }
 
-  btn.disabled=false;
-  fecharChecklist();
+  btnProgress(60, "Checklist salvo! Enviando arquivos...");
+
+  /* ── Fechar tela AGORA — upload continua em background ── */
+  const pendentes = midiaSelecionada.filter(m => !m.enviado && m.file);
+  const locSnap   = { id:loc.id, cliente:loc.cliente, data:loc.data };
+
+  // Libera o motorista imediatamente
+  setTimeout(()=>{
+    btn.disabled = false;
+    btn.innerHTML = fase==="entrega" ? "✓ Confirmar Entrega" : "✓ Confirmar Retirada";
+    fecharChecklist();
+    toast(fase==="entrega" ? "✓ Entrega confirmada!" : "✓ Retirada confirmada!", "ok");
+  }, 400);
+
+  /* ── Upload em segundo plano com banner no topo ── */
+  if(pendentes.length){
+    enviarEmBackground(
+      pendentes.map(m => m.file),
+      { locId:locSnap.id, cliente:locSnap.cliente, data:locSnap.data, fase },
+      async (resultados) => {
+        /* Quando upload concluir, atualiza _midia no Firestore */
+        const novasUrls = resultados
+          .filter(r => r.ok)
+          .map((r, idx) => ({
+            url:     r.url,
+            driveId: r.driveId || null,
+            nome:    r.nome,
+            tipo:    pendentes[idx]?.file?.type?.startsWith("video") ? "video" : "foto",
+            fase,
+            simulado: !!r.simulado
+          }));
+
+        if(novasUrls.length){
+          try {
+            /* Re-lê o doc para não sobrescrever dados salvos depois */
+            const chave = fase==="entrega" ? "checklistEntrega" : "checklistRetirada";
+            const todos = await Store.list("locacoes");
+            const locAtual = todos.find(x => x.id === locSnap.id);
+            const midiasExistentes = locAtual?.[chave]?._midia || [];
+            const updateMidia = {};
+            updateMidia[chave] = {
+              ...(locAtual?.[chave] || {}),
+              _midia: [...midiasExistentes, ...novasUrls]
+            };
+            await Store.update("locacoes", locSnap.id, updateMidia);
+          } catch(e){
+            console.warn("Não foi possível atualizar mídias no Firestore:", e);
+          }
+        }
+      }
+    );
+  }
 }
 
 function esc(s){ return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
