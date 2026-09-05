@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.oreonsolucoes.twa",
+        "sha256_cert_fingerprints": ["A8:2F:93:C7:3C:94:0F:76:19:FB:08:0C:35:05:23:A1:E0:F4:24:55:94:B8:DF:B5:35:05:D1:00:07:D5:FF:EE"]
+      }
+    }]
