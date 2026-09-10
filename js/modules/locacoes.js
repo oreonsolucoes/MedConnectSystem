@@ -29,7 +29,6 @@ export async function render(view){
       </select>
       <select id="filtro-motorista" class="btn btn-ghost">
         <option value="">Todos os motoristas</option>
-        ${motoristas.sort((a,b)=>a.nome.localeCompare(b.nome,"pt-BR")).map(m=>`<option value="${m.id}">${esc(m.nome)}</option>`).join("")}
       </select>
       <button class="btn btn-ghost" id="btn-export">⬇️ Excel</button>
     </div>
@@ -42,6 +41,14 @@ export async function render(view){
 
   // Ordena clientes A→Z para o select de busca
   const clientesOrd = [...clientes].sort((a,b)=>(a.nome||"").localeCompare(b.nome||"","pt-BR"));
+
+  // Popular select de motoristas após dados carregarem
+  const selMot = $("#filtro-motorista");
+  [...motoristas].sort((a,b)=>a.nome.localeCompare(b.nome,"pt-BR")).forEach(m=>{
+    const o = document.createElement("option");
+    o.value = m.id; o.textContent = m.nome;
+    selMot.appendChild(o);
+  });
 
   $("#btn-new").onclick = ()=> form();
 
