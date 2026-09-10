@@ -92,6 +92,7 @@ export async function render(view){
     };
 
     let listaAtual = lista;
+    draw(lista);   // render inicial
     const applyFilters = ()=>{
       const q  = $("#search").value.toLowerCase();
       const fr = $("#filtro-frota").value;
