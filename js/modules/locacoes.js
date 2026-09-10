@@ -27,6 +27,11 @@ export async function render(view){
         <option value="Pago">Pago</option>
         <option value="A Receber">A Receber</option>
       </select>
+      <select id="filtro-motorista" class="btn btn-ghost">
+        <option value="">Todos os motoristas</option>
+        ${motoristas.sort((a,b)=>a.nome.localeCompare(b.nome,"pt-BR")).map(m=>`<option value="${m.id}">${esc(m.nome)}</option>`).join("")}
+      </select>
+      <button class="btn btn-ghost" id="btn-export">⬇️ Excel</button>
     </div>
     <div class="panel"><div class="panel-body flush" id="list"></div></div>`;
 
@@ -79,18 +84,24 @@ export async function render(view){
         b.onclick=async()=>{ if(confirm("Excluir locação?")){ await Store.remove("locacoes",b.dataset.del); toast("Excluída"); }});
     };
 
-    draw(lista);
+    let listaAtual = lista;
     const applyFilters = ()=>{
       const q  = $("#search").value.toLowerCase();
       const fr = $("#filtro-frota").value;
       const st = $("#filtro-status").value;
-      draw(lista.filter(l =>
-        (l.cliente+l.tecnologia+(l.responsavel||"")).toLowerCase().includes(q) &&
-        (!fr || l.frota===fr) && (!st || l.statusPgto===st)));
+      const mo = $("#filtro-motorista").value;
+      listaAtual = lista.filter(l =>
+        (l.cliente+l.tecnologia+(l.responsavel||"")+(l.motorista||"")).toLowerCase().includes(q) &&
+        (!fr || l.frota===fr) && (!st || l.statusPgto===st) &&
+        (!mo || l.motoristaId===mo));
+      draw(listaAtual);
     };
     $("#search").oninput = applyFilters;
     $("#filtro-frota").onchange = applyFilters;
     $("#filtro-status").onchange = applyFilters;
+    $("#filtro-motorista").onchange = applyFilters;
+
+    $("#btn-export").onclick = ()=> exportarExcel(listaAtual);
   });
 
   /* ==================== FORMULÁRIO ==================== */
@@ -326,4 +337,53 @@ export async function render(view){
       closeModal(); toast("Locação salva");
     };
   }
+}
+
+/* ===================== EXPORT EXCEL ===================== */
+function exportarExcel(locacoes){
+  if(!locacoes.length){ toast("Nenhuma locação para exportar", true); return; }
+
+  const cabecalho = ["Data","Horário","Cliente","Endereço","Tecnologia","Frota",
+    "Responsável","Motorista","Valor Cliente (R$)","Custo Motorista (R$)",
+    "Comissão Resp. (R$)","Lucro Líquido (R$)","Status Pgto","Check-list"];
+
+  const rows = locacoes
+    .sort((a,b)=> b.data.localeCompare(a.data))
+    .map(l=>{
+      const custMot  = +l.motoristaCusto||0;
+      const comissao = +l.comissaoResponsavel||0;
+      const custoEq  = +l.custoEquipamento||0;
+      const liquido  = (+l.valorCliente||0) - custoEq - custMot - comissao;
+      return [
+        l.data ? l.data.split("-").reverse().join("/") : "",
+        l.horario||"",
+        l.cliente||"",
+        l.endereco||"",
+        l.tecnologia||"",
+        l.frota==="sublocado" ? "Sublocado" : "Própria",
+        l.responsavel||"",
+        l.motorista||"",
+        (+l.valorCliente||0).toFixed(2).replace(".",","),
+        custMot.toFixed(2).replace(".",","),
+        comissao.toFixed(2).replace(".",","),
+        liquido.toFixed(2).replace(".",","),
+        l.statusPgto||"",
+        l.checklistOk ? "Concluído" : l.checklistEntregaOk ? "Entregue" : "Pendente"
+      ];
+    });
+
+  const BOM = "\uFEFF";
+  const sep = ";";
+  const csv = BOM + [cabecalho, ...rows]
+    .map(r => r.map(v=>{ const s=String(v??"").replace(/"/g,'""'); return /[;\n\r"]/.test(s)?`"${s}"`:s; }).join(sep))
+    .join("\n");
+
+  const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = `locacoes_${new Date().toLocaleDateString("pt-BR").replace(/\//g,"-")}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`${locacoes.length} locação(ões) exportada(s)`);
 }
