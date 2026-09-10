@@ -141,9 +141,27 @@ export async function renderClientes(view){
       if(cep.length!==8){ toast("CEP inválido — deve ter 8 dígitos",true); return; }
       $("#cep-status").textContent = "Buscando...";
       try{
-        const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-        const d = await r.json();
-        if(d.erro){ toast("CEP não encontrado",true); $("#cep-status").textContent=""; return; }
+        // AwesomeAPI — mais precisa e com número quando disponível
+        let d = null;
+        try {
+          const r = await fetch(`https://cep.awesomeapi.com.br/json/${cep}`);
+          const j = await r.json();
+          if(j && j.address) d = {
+            logradouro: j.address,
+            bairro:     j.district||"",
+            localidade: j.city||"",
+            uf:         j.state||""
+          };
+        } catch(_){}
+
+        // Fallback: ViaCEP
+        if(!d){
+          const r2 = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+          const j2 = await r2.json();
+          if(!j2.erro) d = j2;
+        }
+
+        if(!d){ toast("CEP não encontrado",true); $("#cep-status").textContent=""; return; }
         $("#f-rua").value    = d.logradouro||"";
         $("#f-bairro").value = d.bairro||"";
         $("#f-cidade").value = d.localidade||"";
@@ -197,14 +215,22 @@ export async function renderClientes(view){
       if(!data.nome) return toast("Informe o nome", true);
       if(c.id){
         await Store.update("clientes", c.id, data);
-        // Propaga mudança de nome para todas as locações deste cliente
-        if(data.nome !== c.nome){
+        // Propaga mudança de nome OU endereço para todas as locações deste cliente
+        const nomeChanged  = data.nome !== c.nome;
+        const endChanged   = data.endComercial !== c.endComercial;
+        if(nomeChanged || endChanged){
           const todasLoc = await Store.list("locacoes");
           const paraAtualizar = todasLoc.filter(l => l.clienteId === c.id);
-          await Promise.all(paraAtualizar.map(l =>
-            Store.update("locacoes", l.id, { cliente: data.nome, endereco: data.endComercial || l.endereco })
-          ));
-          if(paraAtualizar.length) toast(`Nome atualizado em ${paraAtualizar.length} locação(ões)`);
+          await Promise.all(paraAtualizar.map(l => {
+            const patch = {};
+            if(nomeChanged) patch.cliente  = data.nome;
+            if(endChanged)  patch.endereco = data.endComercial || l.endereco;
+            return Store.update("locacoes", l.id, patch);
+          }));
+          if(paraAtualizar.length){
+            const o = [nomeChanged&&"nome", endChanged&&"endereço"].filter(Boolean).join(" e ");
+            toast(`${o.charAt(0).toUpperCase()+o.slice(1)} atualizado em ${paraAtualizar.length} locação(ões)`);
+          }
         }
       } else {
         await Store.add("clientes", data);
