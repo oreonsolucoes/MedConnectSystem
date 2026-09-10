@@ -55,16 +55,42 @@ export async function render(view){
             :`<button class="btn btn-ghost btn-sm" data-pay="${l.id}">Marcar pago</button>`}</td>
         </tr>`;}).join("")}</tbody></table></div>`;
 
-    // Inadimplência
-    const inad = locacoes.filter(l=>l.statusPgto==="A Receber");
+    // Inadimplência — só em aberto, ordem crescente de data (mais antigo primeiro)
+    const hoje = new Date().toISOString().slice(0,10);
+    const inad = locacoes
+      .filter(l => l.statusPgto === "A Receber")
+      .sort((a,b) => a.data.localeCompare(b.data));
+
+    const diasAtraso = iso => {
+      if(!iso) return 0;
+      const diff = (new Date(hoje) - new Date(iso)) / 86400000;
+      return Math.max(0, Math.floor(diff));
+    };
+
     $("#fin-inadimplencia").innerHTML = inad.length ? `<div class="table-wrap"><table class="data">
-      <thead><tr><th>Data</th><th>Cliente</th><th class="text-right">Valor</th><th></th></tr></thead>
-      <tbody>${inad.map(l=>`<tr>
-        <td class="mono">${fmtData(l.data)}</td><td>${esc(l.cliente)}</td>
-        <td class="text-right mono"><span class="badge badge-danger">${BRL(l.valorCliente)}</span></td>
-        <td class="text-right"><button class="btn btn-primary btn-sm" data-pay="${l.id}">Registrar pagamento</button></td>
-      </tr>`).join("")}</tbody></table></div>`
-      : `<div class="panel-body text-muted" style="text-align:center">Nenhuma pendência 🎉</div>`;
+      <thead><tr>
+        <th>Vencimento</th><th>Cliente</th><th>Tecnologia</th>
+        <th class="text-right">Valor</th><th>Atraso</th><th></th>
+      </tr></thead>
+      <tbody>${inad.map(l=>{
+        const atraso = diasAtraso(l.data);
+        const cor = atraso > 30 ? "badge-danger" : atraso > 7 ? "badge-warn" : "badge-muted";
+        return `<tr>
+          <td class="mono">${fmtData(l.data)}</td>
+          <td><strong>${esc(l.cliente)}</strong></td>
+          <td><span class="badge badge-info">${esc(l.tecnologia)}</span></td>
+          <td class="text-right mono"><span class="badge badge-danger">${BRL(l.valorCliente)}</span></td>
+          <td><span class="badge ${cor}">${atraso === 0 ? "Hoje" : `${atraso}d`}</span></td>
+          <td class="text-right"><button class="btn btn-primary btn-sm" data-pay="${l.id}">Registrar pagamento</button></td>
+        </tr>`;
+      }).join("")}</tbody>
+      <tfoot><tr>
+        <td colspan="3" class="text-right"><strong>Total em aberto</strong></td>
+        <td class="text-right mono"><strong>${BRL(inad.reduce((s,l)=>s+(+l.valorCliente||0),0))}</strong></td>
+        <td colspan="2"></td>
+      </tr></tfoot>
+      </table></div>`
+      : `<div class="panel-body text-muted" style="text-align:center;padding:24px">Nenhuma pendência 🎉</div>`;
 
     $$("[data-pay]").forEach(b=> b.onclick=async()=>{ await Store.update("locacoes",b.dataset.pay,{statusPgto:"Pago"}); toast("Pagamento registrado"); });
   });
