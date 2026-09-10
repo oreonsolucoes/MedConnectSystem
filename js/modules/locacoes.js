@@ -109,7 +109,11 @@ export async function render(view){
     $("#filtro-status").onchange = applyFilters;
     $("#filtro-motorista").onchange = applyFilters;
 
-    $("#btn-export").onclick = ()=> exportarExcel(listaAtual);
+    $("#btn-export").onclick = ()=>{
+      const sel = $("#filtro-motorista");
+      const nomeMot = sel.value ? sel.options[sel.selectedIndex].text : "";
+      exportarExcel(listaAtual, nomeMot);
+    };
   });
 
   /* ==================== FORMULÁRIO ==================== */
@@ -348,12 +352,24 @@ export async function render(view){
 }
 
 /* ===================== EXPORT EXCEL ===================== */
-function exportarExcel(locacoes){
+async function exportarExcel(locacoes, nomeMotorista=""){
   if(!locacoes.length){ toast("Nenhuma locação para exportar", true); return; }
+  toast("Gerando planilha...");
+
+  // Carrega SheetJS sob demanda (só na primeira exportação)
+  if(!window.XLSX){
+    await new Promise((res,rej)=>{
+      const s = document.createElement("script");
+      s.src = "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    }).catch(()=>{ toast("Falha ao carregar gerador de Excel", true); });
+  }
+  if(!window.XLSX){ return; }
 
   const cabecalho = ["Data","Horário","Cliente","Endereço","Tecnologia","Frota",
-    "Responsável","Motorista","Valor Cliente (R$)","Custo Motorista (R$)",
-    "Comissão Resp. (R$)","Lucro Líquido (R$)","Status Pgto","Check-list"];
+    "Responsável","Motorista","Valor Cliente","Custo Motorista",
+    "Comissão Resp.","Lucro Líquido","Status Pgto","Check-list"];
 
   const rows = locacoes
     .sort((a,b)=> b.data.localeCompare(a.data))
@@ -362,36 +378,66 @@ function exportarExcel(locacoes){
       const comissao = +l.comissaoResponsavel||0;
       const custoEq  = +l.custoEquipamento||0;
       const liquido  = (+l.valorCliente||0) - custoEq - custMot - comissao;
-      return [
-        l.data ? l.data.split("-").reverse().join("/") : "",
-        l.horario||"",
-        l.cliente||"",
-        l.endereco||"",
-        l.tecnologia||"",
-        l.frota==="sublocado" ? "Sublocado" : "Própria",
-        l.responsavel||"",
-        l.motorista||"",
-        (+l.valorCliente||0).toFixed(2).replace(".",","),
-        custMot.toFixed(2).replace(".",","),
-        comissao.toFixed(2).replace(".",","),
-        liquido.toFixed(2).replace(".",","),
-        l.statusPgto||"",
-        l.checklistOk ? "Concluído" : l.checklistEntregaOk ? "Entregue" : "Pendente"
-      ];
+      return {
+        "Data":           l.data ? l.data.split("-").reverse().join("/") : "",
+        "Horário":        l.horario||"",
+        "Cliente":        l.cliente||"",
+        "Endereço":       l.endereco||"",
+        "Tecnologia":     l.tecnologia||"",
+        "Frota":          l.frota==="sublocado" ? "Sublocado" : "Própria",
+        "Responsável":    l.responsavel||"",
+        "Motorista":      l.motorista||"",
+        "Valor Cliente":  +l.valorCliente||0,   // número real
+        "Custo Motorista":custMot,
+        "Comissão Resp.": comissao,
+        "Lucro Líquido":  liquido,
+        "Status Pgto":    l.statusPgto||"",
+        "Check-list":     l.checklistOk ? "Concluído" : l.checklistEntregaOk ? "Entregue" : "Pendente"
+      };
     });
 
-  const BOM = "\uFEFF";
-  const sep = ";";
-  const csv = BOM + [cabecalho, ...rows]
-    .map(r => r.map(v=>{ const s=String(v??"").replace(/"/g,'""'); return /[;\n\r"]/.test(s)?`"${s}"`:s; }).join(sep))
-    .join("\n");
+  const XLSX = window.XLSX;
+  const ws = XLSX.utils.json_to_sheet(rows, { header: cabecalho });
 
-  const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href     = url;
-  a.download = `locacoes_${new Date().toLocaleDateString("pt-BR").replace(/\//g,"-")}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  // Formato moeda BRL nas colunas de valor (I a L = índices 8-11)
+  const colMoeda = [8,9,10,11];
+  const range = XLSX.utils.decode_range(ws["!ref"]);
+  for(let r=1; r<=range.e.r; r++){
+    colMoeda.forEach(c=>{
+      const cell = ws[XLSX.utils.encode_cell({r, c})];
+      if(cell && typeof cell.v === "number"){
+        cell.t = "n";
+        cell.z = '"R$" #,##0.00';
+      }
+    });
+  }
+
+  // Larguras de coluna
+  ws["!cols"] = [
+    {wch:10},{wch:8},{wch:22},{wch:34},{wch:14},{wch:10},
+    {wch:14},{wch:16},{wch:14},{wch:15},{wch:14},{wch:14},{wch:11},{wch:12}
+  ];
+
+  // Congela o cabeçalho
+  ws["!freeze"] = { xSplit:0, ySplit:1 };
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Locações");
+
+  // Nome do arquivo: locacoes_[motorista]_[dataInicio]_a_[dataFim].xlsx
+  const datas = locacoes.map(l=>l.data).filter(Boolean).sort();
+  const fmtArq = iso => iso ? iso.split("-").reverse().join("-") : "";
+  const ini = fmtArq(datas[0]);
+  const fim = fmtArq(datas[datas.length-1]);
+
+  const slug = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,"").toLowerCase();
+
+  let nome = "locacoes";
+  if(nomeMotorista) nome += `_${slug(nomeMotorista)}`;
+  if(ini && fim)    nome += ini===fim ? `_${ini}` : `_${ini}_a_${fim}`;
+  nome += ".xlsx";
+
+  XLSX.writeFile(wb, nome);
   toast(`${locacoes.length} locação(ões) exportada(s)`);
 }
