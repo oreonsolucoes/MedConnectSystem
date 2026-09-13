@@ -56,7 +56,7 @@ export async function render(view){
         </tr>`;}).join("")}</tbody></table></div>`;
 
     // Inadimplência — só em aberto, ordem crescente de data (mais antigo primeiro)
-    const hoje = new Date().toISOString().slice(0,10);
+    const hoje = new Date().toLocaleDateString('en-CA'); // retorna YYYY-MM-DD no fuso local
     const inad = locacoes
       .filter(l => l.statusPgto === "A Receber")
       .sort((a,b) => a.data.localeCompare(b.data));
