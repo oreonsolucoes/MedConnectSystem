@@ -61,26 +61,40 @@ export async function render(view){
       .filter(l => l.statusPgto === "A Receber")
       .sort((a,b) => a.data.localeCompare(b.data));
 
-    const diasAtraso = iso => {
+    // Retorna diferença em dias: positivo = atrasado, negativo = a vencer, 0 = hoje
+    const diasDiff = iso => {
       if(!iso) return 0;
       const diff = (new Date(hoje) - new Date(iso)) / 86400000;
-      return Math.max(0, Math.floor(diff));
+      return Math.floor(diff);
+    };
+
+    // Semáforo 4 cores:
+    //  🔴 vermelho  — vencido há mais de 7 dias
+    //  🟡 amarelo   — vencido de 1 a 7 dias (ou vence hoje)
+    //  🟢 verde     — vence amanhã
+    //  🔵 azul      — vence em 2+ dias
+    const badgeAtraso = diff => {
+      if (diff > 7)        return { cls: "badge-danger", label: `${diff}d` };
+      if (diff >= 1)       return { cls: "badge-warn",   label: `${diff}d` };
+      if (diff === 0)      return { cls: "badge-warn",   label: "Hoje" };
+      if (diff === -1)     return { cls: "badge-ok",     label: "Amanhã" };
+                           return { cls: "badge-blue",   label: `em ${Math.abs(diff)}d` };
     };
 
     $("#fin-inadimplencia").innerHTML = inad.length ? `<div class="table-wrap"><table class="data">
       <thead><tr>
         <th>Vencimento</th><th>Cliente</th><th>Tecnologia</th>
-        <th class="text-right">Valor</th><th>Atraso</th><th></th>
+        <th class="text-right">Valor</th><th>Prazo</th><th></th>
       </tr></thead>
       <tbody>${inad.map(l=>{
-        const atraso = diasAtraso(l.data);
-        const cor = atraso > 30 ? "badge-danger" : atraso > 7 ? "badge-warn" : "badge-muted";
+        const diff   = diasDiff(l.data);
+        const badge  = badgeAtraso(diff);
         return `<tr>
           <td class="mono">${fmtData(l.data)}</td>
           <td><strong>${esc(l.cliente)}</strong></td>
           <td><span class="badge badge-info">${esc(l.tecnologia)}</span></td>
-          <td class="text-right mono"><span class="badge badge-danger">${BRL(l.valorCliente)}</span></td>
-          <td><span class="badge ${cor}">${atraso === 0 ? "Hoje" : `${atraso}d`}</span></td>
+          <td class="text-right mono"><span class="badge ${diff > 0 ? 'badge-danger' : 'badge-muted'}">${BRL(l.valorCliente)}</span></td>
+          <td><span class="badge ${badge.cls}">${badge.label}</span></td>
           <td class="text-right"><button class="btn btn-primary btn-sm" data-pay="${l.id}">Registrar pagamento</button></td>
         </tr>`;
       }).join("")}</tbody>
