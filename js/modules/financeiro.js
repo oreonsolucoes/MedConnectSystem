@@ -64,7 +64,7 @@ export async function render(view){
     // Retorna diferença em dias: positivo = atrasado, negativo = a vencer, 0 = hoje
     const diasDiff = iso => {
       if(!iso) return 0;
-      const diff = (new Date(hoje) - new Date(iso)) / 86400000;
+      const diff = (new Date(hoje + "T00:00:00") - new Date(iso + "T00:00:00")) / 86400000;
       return Math.floor(diff);
     };
 
