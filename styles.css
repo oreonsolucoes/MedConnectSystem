@@ -141,6 +141,7 @@ table.data tr:last-child td{ border-bottom:none; }
 .badge-danger{ background:#fbe4e2; color:var(--danger); }
 .badge-info{ background:var(--brand-light); color:var(--brand); }
 .badge-muted{ background:#eef2f7; color:var(--muted); }
+.badge-blue{ background:#e0eeff; color:#1a5fb4; }
 .badge-frota{ background:#e2f5ec; color:var(--ok); }
 .badge-subloc{ background:#fdf3dc; color:#a9760a; }
 
