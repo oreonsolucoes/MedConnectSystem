@@ -12,11 +12,7 @@ if (USE_FIREBASE) {
   fs = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
 }
 
-/* ---------- Modo MOCK (persistido em localStorage + pub/sub) ----------
-   Persistimos em localStorage para que a página do sistema (index.html) e a
-   página do motorista (motorista.html) compartilhem os MESMOS dados e se
-   sincronizem em tempo real entre abas via evento 'storage'. Assim, quando a
-   Vilma cria/edita uma entrega, o app do motorista recebe na hora. */
+/* ---------- Modo MOCK (persistido em localStorage + pub/sub) ---------- */
 const LS_KEY = "mc_db_v2";
 
 const seed = {
@@ -26,31 +22,44 @@ const seed = {
   equipamentos: structuredClone(mock.equipamentos),
   locacoes:     structuredClone(mock.locacoes),
   despesas:     structuredClone(mock.despesas),
+  responsaveis: structuredClone(mock.responsaveis || []),  // FIX: coleção ausente causava TDZ em locacoes.js
   checklists:   []
 };
 
 let memory;
 try {
   const saved = JSON.parse(localStorage.getItem(LS_KEY));
-  memory = saved && saved.locacoes ? saved : seed;
+  if (saved && saved.locacoes) {
+    // FIX: migração — garante que coleções novas existam em dados salvos antigos
+    if (!saved.responsaveis) saved.responsaveis = [];
+    memory = saved;
+  } else {
+    memory = seed;
+  }
 } catch { memory = seed; }
 
 const subscribers = {}; // coleção -> [callbacks]
 
 function persist(){ try { localStorage.setItem(LS_KEY, JSON.stringify(memory)); } catch {} }
-function notify(col){ (subscribers[col]||[]).forEach(cb => cb([...memory[col]])); }
+function notify(col){
+  if (!memory[col]) return; // FIX: evita crash em coleção inexistente
+  (subscribers[col]||[]).forEach(cb => cb([...memory[col]]));
+}
 function uid(){ return "id" + Math.random().toString(36).slice(2,9); }
 
-/* Sincroniza entre abas/páginas: se outra aba alterou o banco, recarrega e reemite */
+/* Sincroniza entre abas/páginas */
 if (!USE_FIREBASE && typeof window !== "undefined"){
   window.addEventListener("storage", e=>{
     if (e.key !== LS_KEY || !e.newValue) return;
     try {
-      memory = JSON.parse(e.newValue);
+      const parsed = JSON.parse(e.newValue);
+      // FIX: mantém coleção responsaveis na sync entre abas
+      if (!parsed.responsaveis) parsed.responsaveis = [];
+      memory = parsed;
       Object.keys(subscribers).forEach(col => notify(col));
     } catch {}
   });
-  persist(); // grava o seed inicial se ainda não existir
+  persist();
 }
 
 /* ---------- API pública ---------- */
@@ -64,8 +73,10 @@ export const Store = {
         callback(snap.docs.map(d => ({ id:d.id, ...d.data() })));
       });
     }
+    // FIX: inicializa coleção se não existir (evita crash com dados legados)
+    if (!memory[col]) memory[col] = [];
     (subscribers[col] ||= []).push(callback);
-    callback([...memory[col]]);              // emissão inicial
+    callback([...memory[col]]);
     return () => { subscribers[col] = subscribers[col].filter(c => c !== callback); };
   },
 
@@ -75,6 +86,8 @@ export const Store = {
       const snap = await fs.getDocs(fs.collection(db, col));
       return snap.docs.map(d => ({ id:d.id, ...d.data() }));
     }
+    // FIX: retorna [] em vez de lançar TypeError quando coleção não existe
+    if (!memory[col]) memory[col] = [];
     return [...memory[col]];
   },
 
@@ -83,6 +96,7 @@ export const Store = {
       const ref = await fs.addDoc(fs.collection(db, col), data);
       return ref.id;
     }
+    if (!memory[col]) memory[col] = []; // FIX: cria coleção on-the-fly
     const id = uid();
     memory[col].push({ id, ...data });
     persist(); notify(col);
@@ -94,6 +108,7 @@ export const Store = {
       await fs.updateDoc(fs.doc(db, col, id), data);
       return;
     }
+    if (!memory[col]) return; // FIX: guard
     const i = memory[col].findIndex(x => x.id === id);
     if (i >= 0){ memory[col][i] = { ...memory[col][i], ...data }; persist(); notify(col); }
   },
@@ -103,6 +118,7 @@ export const Store = {
       await fs.deleteDoc(fs.doc(db, col, id));
       return;
     }
+    if (!memory[col]) return; // FIX: guard
     memory[col] = memory[col].filter(x => x.id !== id);
     persist(); notify(col);
   }
