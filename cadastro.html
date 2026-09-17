@@ -94,7 +94,7 @@
           </select>
         </div>
         <div class="field">
-          <label>CPF / CNPJ</label>
+          <label>CPF / CNPJ <span>*</span></label>
           <input id="f-documento" placeholder="000.000.000-00"/>
         </div>
       </div>
@@ -108,7 +108,7 @@
           <input id="f-tel" type="tel" placeholder="(11) 9xxxx-xxxx"/>
         </div>
         <div class="field">
-          <label>E-mail</label>
+          <label>E-mail <span>*</span></label>
           <input id="f-email" type="email" placeholder="clinica@email.com"/>
         </div>
       </div>
@@ -139,7 +139,7 @@
       </div>
       <div class="row">
         <div class="field">
-          <label>Bairro</label>
+          <label>Bairro <span>*</span></label>
           <input id="f-bairro"/>
         </div>
         <div class="field">
@@ -299,16 +299,32 @@
       el("btn-enviar").onclick = async()=>{
         const btn = el("btn-enviar");
         const nome = el("f-nome").value.trim();
+        const doc  = el("f-documento").value.trim();
         const resp = el("f-resp").value.trim();
         const tel  = el("f-tel").value.trim();
+        const email= el("f-email").value.trim();
         const rua  = el("f-rua").value.trim();
         const num  = el("f-numero").value.trim();
+        const bairro = el("f-bairro").value.trim();
         const cid  = el("f-cidade").value.trim();
         const volt = el("f-volt").value;
 
-        if(!nome||!resp||!tel||!rua||!num||!cid||!volt){
+        const erros = [];
+        if(!nome)   erros.push("Nome da clínica");
+        if(!doc)    erros.push("CPF / CNPJ");
+        if(!resp)   erros.push("Nome do responsável");
+        if(!tel)    erros.push("Telefone / WhatsApp");
+        if(!email)  erros.push("E-mail");
+        if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) erros.push("E-mail inválido");
+        if(!rua)    erros.push("Logradouro");
+        if(!num)    erros.push("Número");
+        if(!bairro) erros.push("Bairro");
+        if(!cid)    erros.push("Cidade");
+        if(!volt)   erros.push("Voltagem");
+
+        if(erros.length){
           show("tela-erro");
-          el("tela-erro").textContent = "⚠️ Preencha todos os campos obrigatórios (*)";
+          el("tela-erro").textContent = "⚠️ Campo(s) obrigatório(s): " + erros.join(", ");
           el("tela-erro").scrollIntoView({behavior:"smooth",block:"center"});
           return;
         }
