@@ -40,7 +40,7 @@ export async function renderClientes(view){
           <tr>
             <td>
               <strong>${esc(c.nome)}</strong>
-              ${c.responsavel ? `<br><span class="text-muted" style="font-size:11px">Resp: ${esc(c.responsavel)}</span>` : ""}
+              ${c.responsavelClinica ? `<br><span class="text-muted" style="font-size:11px">Resp: ${esc(c.responsavelClinica)}</span>` : ""}
               ${c.email ? `<br><span class="text-muted" style="font-size:11px">${esc(c.email)}</span>` : ""}
             </td>
             <td>${esc(c.telefone||"—")}<br><span class="text-muted" style="font-size:11px">${esc(c.horario||"")}</span></td>
@@ -53,7 +53,6 @@ export async function renderClientes(view){
             </td>
           </tr>`).join("") || `<tr><td colspan="5" class="text-muted" style="padding:24px;text-align:center">Nenhum cliente encontrado.</td></tr>`
       });
-      // Relatório
       document.querySelectorAll("[data-rel]").forEach(b=> b.onclick=()=>{
         const cli = lista.find(x=>x.id===b.dataset.rel);
         if(cli) abrirRelatorioCliente(cli);
@@ -61,28 +60,24 @@ export async function renderClientes(view){
       bindRowActions("clientes", lista, formCliente);
     };
 
-    // FIX: aplica o filtro ativo ao re-renderizar (preserva busca após watch)
+    // FIX: re-aplica filtro ativo ao re-renderizar (watch não reseta a busca)
     const aplicarFiltro = ()=>{
-      if(!filtroAtivo){
-        draw(lista);
-      } else {
-        draw(lista.filter(c =>
-          (c.nome||"").toLowerCase().includes(filtroAtivo) ||
-          (c.responsavel||"").toLowerCase().includes(filtroAtivo) ||
-          (c.email||"").toLowerCase().includes(filtroAtivo) ||
-          (c.documento||"").toLowerCase().includes(filtroAtivo) ||
-          (c.telefone||"").toLowerCase().includes(filtroAtivo) ||
-          (c.endComercial||"").toLowerCase().includes(filtroAtivo)
-        ));
-      }
+      if(!filtroAtivo){ draw(lista); return; }
+      draw(lista.filter(c =>
+        (c.nome||"").toLowerCase().includes(filtroAtivo) ||
+        (c.responsavelClinica||"").toLowerCase().includes(filtroAtivo) ||
+        (c.email||"").toLowerCase().includes(filtroAtivo) ||
+        (c.documento||"").toLowerCase().includes(filtroAtivo) ||
+        (c.telefone||"").toLowerCase().includes(filtroAtivo) ||
+        (c.endComercial||"").toLowerCase().includes(filtroAtivo)
+      ));
     };
 
     aplicarFiltro();
 
-    // FIX: reatribui listener mas usa debounce e preserva filtroAtivo
     const searchEl = $("#search");
     if(searchEl){
-      searchEl.value = filtroAtivo; // restaura o termo visível
+      searchEl.value = filtroAtivo;
       let debTimer;
       searchEl.oninput = e => {
         clearTimeout(debTimer);
@@ -104,61 +99,43 @@ export async function renderClientes(view){
   function formCliente(c={}){
     openModal(c.id?"Editar cliente":"Novo cliente", `
       <div class="form-grid">
-
-        <!-- Identificação -->
-        <div class="field full" style="border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:4px">
-          <label style="color:var(--brand);font-size:13px;font-weight:700">👤 Identificação</label>
-        </div>
-
         <div class="field full">
-          <label>Nome / Razão Social <span style="color:#d6453d">*</span></label>
-          <input id="f-nome" value="${esc(c.nome||"")}">
+          <label>Nome completo da clínica <span style="color:#d6453d">*</span></label>
+          <input id="f-nome" value="${esc(c.nome||"")}" placeholder="Ex.: Clínica Bella Vita">
         </div>
-
         <div class="field">
-          <label>Tipo de documento <span style="color:#d6453d">*</span></label>
+          <label>CPF / CNPJ <span style="color:#d6453d">*</span></label>
           <select id="f-doc">
             <option ${c.doc==="CPF"?"selected":""}>CPF</option>
             <option ${c.doc==="CNPJ"?"selected":""}>CNPJ</option>
           </select>
         </div>
         <div class="field">
-          <label>CPF / CNPJ <span style="color:#d6453d">*</span></label>
+          <label>Número do documento <span style="color:#d6453d">*</span></label>
           <input id="f-documento" value="${esc(c.documento||"")}" placeholder="Somente números">
         </div>
-
         <div class="field">
-          <label>Nome do Responsável <span style="color:#d6453d">*</span></label>
-          <input id="f-resp" value="${esc(c.responsavel||"")}" placeholder="Nome completo">
+          <label>Nome do responsável da clínica <span style="color:#d6453d">*</span></label>
+          <input id="f-resp-cli" value="${esc(c.responsavelClinica||"")}" placeholder="Nome de quem recebe">
         </div>
         <div class="field">
           <label>Telefone / WhatsApp <span style="color:#d6453d">*</span></label>
-          <input id="f-tel" value="${esc(c.telefone||"")}" placeholder="(11) 99999-9999">
+          <input id="f-tel" value="${esc(c.telefone||"")}" placeholder="(11) 9xxxx-xxxx">
         </div>
         <div class="field">
           <label>E-mail <span style="color:#d6453d">*</span></label>
-          <input id="f-email" type="email" value="${esc(c.email||"")}" placeholder="contato@exemplo.com">
-        </div>
-        <div class="field">
-          <label>Horário de funcionamento</label>
-          <input id="f-hor" value="${esc(c.horario||"")}">
+          <input type="email" id="f-email" value="${esc(c.email||"")}" placeholder="clinica@email.com">
         </div>
 
         <!-- Endereço Comercial -->
         <div class="field full" style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px">
-          <label style="color:var(--brand);font-size:13px;font-weight:700">📍 Endereço Comercial <span style="color:#d6453d">*</span></label>
-          <div style="display:flex;gap:10px;margin-top:8px">
+          <label style="color:var(--brand);font-size:13px;font-weight:700">📍 Endereço comercial via CEP <span style="color:#d6453d">*</span></label>
+          <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
             <input id="f-cep" value="${esc(c.cep||"")}" placeholder="00000-000" maxlength="9"
               style="width:150px;padding:9px 11px;border:1.5px solid var(--brand);border-radius:8px">
             <button class="btn btn-ghost btn-sm" id="btn-cep" type="button">🔍 Buscar CEP</button>
             <span id="cep-status" style="font-size:12px;color:var(--muted);align-self:center"></span>
           </div>
-        </div>
-
-        <div class="field">
-          <label>CEP <span style="color:#d6453d">*</span></label>
-          <input id="f-cep2" value="${esc(c.cep||"")}" placeholder="00000-000" maxlength="9" style="display:none">
-          <!-- CEP já está acima, campo oculto para compatibilidade -->
         </div>
 
         <div class="field">
@@ -168,6 +145,10 @@ export async function renderClientes(view){
         <div class="field">
           <label>Número <span style="color:#d6453d">*</span></label>
           <input id="f-numero" value="${esc(c.numero||"")}" placeholder="Nº">
+        </div>
+        <div class="field">
+          <label>Complemento <span style="color:var(--muted);font-size:11px;font-weight:400">(opcional)</span></label>
+          <input id="f-comp" value="${esc(c.complemento||"")}" placeholder="Sala, andar, bloco...">
         </div>
         <div class="field">
           <label>Bairro <span style="color:#d6453d">*</span></label>
@@ -181,21 +162,19 @@ export async function renderClientes(view){
           <label>Estado (UF) <span style="color:#d6453d">*</span></label>
           <input id="f-estado" value="${esc(c.estado||"")}" maxlength="2" style="text-transform:uppercase">
         </div>
-        <div class="field">
-          <label>Complemento <span style="color:var(--muted);font-size:11px;font-weight:400">(opcional)</span></label>
-          <input id="f-comp" value="${esc(c.complemento||"")}" placeholder="Sala, andar, bloco...">
-        </div>
-
         <div class="field full">
-          <label>Endereço completo (gerado automaticamente)</label>
-          <input id="f-com" value="${esc(c.endComercial||"")}"
-            placeholder="Preenchido automaticamente pelos campos acima">
+          <label>Endereço comercial completo</label>
+          <input id="f-com" value="${esc(c.endComercial||"")}" placeholder="Preenchido automaticamente pelo CEP">
+        </div>
+        <div class="field full">
+          <label>Ponto de referência</label>
+          <input id="f-ref" value="${esc(c.pontoReferencia||"")}" placeholder="Ex.: Próximo ao metrô, portaria azul...">
         </div>
 
         <!-- Endereço Residencial (opcional) -->
-        <div class="field full" style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px">
-          <label style="color:var(--muted);font-size:13px;font-weight:700">🏠 Endereço Residencial
-            <span style="color:var(--muted);font-size:11px;font-weight:400">(opcional)</span>
+        <div class="field full" style="border-top:1px solid var(--line);padding-top:12px;margin-top:4px">
+          <label style="color:var(--muted);font-size:13px;font-weight:700">🏠 Endereço residencial
+            <span style="font-size:11px;font-weight:400">(opcional)</span>
           </label>
         </div>
         <div class="field full">
@@ -204,20 +183,34 @@ export async function renderClientes(view){
         </div>
 
         <!-- Dados do local -->
-        <div class="field full" style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px">
+        <div class="field full" style="border-top:1px solid var(--line);padding-top:12px;margin-top:4px">
           <label style="color:var(--brand);font-size:13px;font-weight:700">⚡ Dados do local</label>
         </div>
         <div class="field">
           <label>Voltagem do local</label>
-          <input id="f-volt" value="${esc(c.voltagem||"")}" placeholder="110V / 220V">
+          <select id="f-volt">
+            <option value="" ${!c.voltagem?"selected":""}>Não informado</option>
+            <option value="110V" ${c.voltagem==="110V"?"selected":""}>110V</option>
+            <option value="220V" ${c.voltagem==="220V"?"selected":""}>220V</option>
+            <option value="110V/220V" ${c.voltagem==="110V/220V"?"selected":""}>110V e 220V</option>
+          </select>
         </div>
         <div class="field">
-          <label>Espaço físico</label>
-          <input id="f-esp" value="${esc(c.espaco||"")}">
+          <label>Horário de funcionamento</label>
+          <input id="f-hor" value="${esc(c.horario||"")}" placeholder="Ex.: Seg a Sex 9h–18h">
         </div>
         <div class="field full">
-          <label>Restrições (acesso, elevador...)</label>
-          <input id="f-rest" value="${esc(c.restricoes||"")}">
+          <label>Restrições de acesso (escada, elevador, peso...)</label>
+          <input id="f-rest" value="${esc(c.restricoes||"")}" placeholder="Ex.: Sem elevador, escada com 2 lances">
+        </div>
+        <div class="field full">
+          <label>Tem espaço para mesa do equipamento?</label>
+          <select id="f-espaco">
+            <option value="" ${!c.espaco?"selected":""}>Não informado</option>
+            <option value="Sim" ${c.espaco==="Sim"?"selected":""}>Sim</option>
+            <option value="Não" ${c.espaco==="Não"?"selected":""}>Não</option>
+            <option value="Parcial" ${c.espaco==="Parcial"?"selected":""}>Parcial (mesa pequena)</option>
+          </select>
         </div>
 
         <div class="form-actions">
@@ -233,15 +226,24 @@ export async function renderClientes(view){
       e.target.value = v;
     };
 
-    // Busca CEP via ViaCEP
+    // Busca CEP — AwesomeAPI com fallback ViaCEP
     $("#btn-cep").onclick = async()=>{
       const cep = $("#f-cep").value.replace(/\D/g,"");
       if(cep.length!==8){ toast("CEP inválido — deve ter 8 dígitos",true); return; }
       $("#cep-status").textContent = "Buscando...";
       try{
-        const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-        const d = await r.json();
-        if(d.erro){ toast("CEP não encontrado",true); $("#cep-status").textContent=""; return; }
+        let d = null;
+        try {
+          const r = await fetch(`https://cep.awesomeapi.com.br/json/${cep}`);
+          const j = await r.json();
+          if(j && j.address) d = { logradouro:j.address, bairro:j.district||"", localidade:j.city||"", uf:j.state||"" };
+        } catch(_){}
+        if(!d){
+          const r2 = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+          const j2 = await r2.json();
+          if(!j2.erro) d = j2;
+        }
+        if(!d){ toast("CEP não encontrado",true); $("#cep-status").textContent=""; return; }
         $("#f-rua").value    = d.logradouro||"";
         $("#f-bairro").value = d.bairro||"";
         $("#f-cidade").value = d.localidade||"";
@@ -271,60 +273,78 @@ export async function renderClientes(view){
 
     $("#c-cancel").onclick = closeModal;
 
-    // VALIDAÇÃO COMPLETA
+    // VALIDAÇÃO COMPLETA DOS CAMPOS OBRIGATÓRIOS
     $("#c-save").onclick = async ()=>{
-      const nome       = $("#f-nome").value.trim();
-      const documento  = $("#f-documento").value.trim();
-      const responsavel= $("#f-resp").value.trim();
-      const telefone   = $("#f-tel").value.trim();
-      const email      = $("#f-email").value.trim();
-      const cep        = $("#f-cep").value.trim();
-      const rua        = $("#f-rua").value.trim();
-      const numero     = $("#f-numero").value.trim();
-      const bairro     = $("#f-bairro").value.trim();
-      const cidade     = $("#f-cidade").value.trim();
-      const estado     = $("#f-estado").value.trim();
+      const nome             = $("#f-nome").value.trim();
+      const documento        = $("#f-documento").value.trim();
+      const responsavelClinica = $("#f-resp-cli").value.trim();
+      const telefone         = $("#f-tel").value.trim();
+      const email            = $("#f-email").value.trim();
+      const cep              = $("#f-cep").value.trim();
+      const rua              = $("#f-rua").value.trim();
+      const numero           = $("#f-numero").value.trim();
+      const bairro           = $("#f-bairro").value.trim();
+      const cidade           = $("#f-cidade").value.trim();
+      const estado           = $("#f-estado").value.trim();
 
-      // Campos obrigatórios — valida em sequência com foco no campo problemático
-      if(!nome)        { toast("Informe o Nome / Razão Social", true); $("#f-nome").focus(); return; }
-      if(!documento)   { toast("Informe o CPF / CNPJ", true); $("#f-documento").focus(); return; }
-      if(!responsavel) { toast("Informe o Nome do Responsável", true); $("#f-resp").focus(); return; }
-      if(!telefone)    { toast("Informe o Telefone de Contato", true); $("#f-tel").focus(); return; }
-      if(!email)       { toast("Informe o E-mail", true); $("#f-email").focus(); return; }
-      if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ toast("E-mail inválido", true); $("#f-email").focus(); return; }
-
-      // Endereço comercial obrigatório
-      if(!cep)    { toast("Informe o CEP do endereço comercial", true); $("#f-cep").focus(); return; }
-      if(!rua)    { toast("Informe o Logradouro (Rua/Avenida)", true); $("#f-rua").focus(); return; }
-      if(!numero) { toast("Informe o Número do endereço", true); $("#f-numero").focus(); return; }
-      if(!bairro) { toast("Informe o Bairro", true); $("#f-bairro").focus(); return; }
-      if(!cidade) { toast("Informe a Cidade", true); $("#f-cidade").focus(); return; }
-      if(!estado) { toast("Informe o Estado (UF)", true); $("#f-estado").focus(); return; }
+      if(!nome)              { toast("Informe o Nome / Razão Social", true); $("#f-nome").focus(); return; }
+      if(!documento)         { toast("Informe o CPF / CNPJ", true); $("#f-documento").focus(); return; }
+      if(!responsavelClinica){ toast("Informe o Nome do Responsável", true); $("#f-resp-cli").focus(); return; }
+      if(!telefone)          { toast("Informe o Telefone de Contato", true); $("#f-tel").focus(); return; }
+      if(!email)             { toast("Informe o E-mail", true); $("#f-email").focus(); return; }
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ toast("E-mail inválido", true); $("#f-email").focus(); return; }
+      if(!cep)               { toast("Informe o CEP do endereço comercial", true); $("#f-cep").focus(); return; }
+      if(!rua)               { toast("Informe o Logradouro (Rua/Avenida)", true); $("#f-rua").focus(); return; }
+      if(!numero)            { toast("Informe o Número do endereço", true); $("#f-numero").focus(); return; }
+      if(!bairro)            { toast("Informe o Bairro", true); $("#f-bairro").focus(); return; }
+      if(!cidade)            { toast("Informe a Cidade", true); $("#f-cidade").focus(); return; }
+      if(!estado)            { toast("Informe o Estado (UF)", true); $("#f-estado").focus(); return; }
 
       const data = {
         nome,
-        doc:          $("#f-doc").value,
+        doc:               $("#f-doc").value,
         documento,
-        responsavel,
+        responsavelClinica,
         telefone,
         email,
         cep,
         rua,
         numero,
-        complemento:  $("#f-comp").value.trim(),
+        complemento:       $("#f-comp").value.trim(),
         bairro,
         cidade,
-        estado:       estado.toUpperCase(),
-        endComercial: $("#f-com").value.trim() || [rua,numero,bairro,cidade,estado].filter(Boolean).join(", "),
-        endResidencial: $("#f-res").value.trim(),
-        voltagem:     $("#f-volt").value.trim(),
-        espaco:       $("#f-esp").value.trim(),
-        restricoes:   $("#f-rest").value.trim(),
-        horario:      $("#f-hor").value.trim()
+        estado:            estado.toUpperCase(),
+        endComercial:      $("#f-com").value.trim() || [rua,numero,bairro,cidade,estado].filter(Boolean).join(", "),
+        pontoReferencia:   $("#f-ref").value.trim(),
+        endResidencial:    $("#f-res").value.trim(),
+        voltagem:          $("#f-volt").value,
+        horario:           $("#f-hor").value.trim(),
+        restricoes:        $("#f-rest").value.trim(),
+        espaco:            $("#f-espaco").value
       };
 
-      if(c.id) await Store.update("clientes", c.id, data);
-      else     await Store.add("clientes", data);
+      if(c.id){
+        await Store.update("clientes", c.id, data);
+        // Propaga nome e/ou endereço para todas as locações deste cliente
+        const nomeChanged = data.nome !== c.nome;
+        const endChanged  = data.endComercial !== c.endComercial;
+        if(nomeChanged || endChanged){
+          const todasLoc = await Store.list("locacoes");
+          const paraAtualizar = todasLoc.filter(l => l.clienteId === c.id);
+          await Promise.all(paraAtualizar.map(l => {
+            const patch = {};
+            if(nomeChanged) patch.cliente  = data.nome;
+            if(endChanged)  patch.endereco = data.endComercial || l.endereco;
+            return Store.update("locacoes", l.id, patch);
+          }));
+          if(paraAtualizar.length){
+            const o = [nomeChanged&&"nome", endChanged&&"endereço"].filter(Boolean).join(" e ");
+            toast(`${o.charAt(0).toUpperCase()+o.slice(1)} atualizado em ${paraAtualizar.length} locação(ões)`);
+          }
+        }
+      } else {
+        await Store.add("clientes", data);
+      }
       closeModal();
       toast("Cliente salvo ✓");
     };
@@ -333,8 +353,6 @@ export async function renderClientes(view){
 
 /* ===================== MOTORISTAS ===================== */
 export async function renderMotoristas(view){
-  // Monta a estrutura da página manualmente (não usa pageWrap)
-  // para ter controle total sobre os listeners da tabela
   view.innerHTML = `
     <div class="page-head">
       <div><h2>Motoristas</h2><p class="sub">Equipe de entregas, vínculos e PINs de acesso</p></div>
@@ -357,10 +375,8 @@ export async function renderMotoristas(view){
 
   function pinAleatorio(){ return String(Math.floor(1000 + Math.random()*9000)); }
 
-  // Delega todos os cliques da tbody num único listener — nunca perde referência
   const tbody = $("#mot-tbody");
   tbody.addEventListener("click", async e=>{
-    // Olhinho — revelar/ocultar PIN
     if(e.target.closest(".btn-ver-pin")){
       const btn  = e.target.closest(".btn-ver-pin");
       const span = btn.closest("tr").querySelector(".pin-mascarado");
@@ -370,14 +386,12 @@ export async function renderMotoristas(view){
       btn.textContent     = visivel ? "👁️" : "🙈";
       return;
     }
-    // Editar
     if(e.target.closest("[data-edit-mot]")){
       const id = e.target.closest("[data-edit-mot]").dataset.editMot;
       const lista = await Store.list("motoristas");
       form(lista.find(x=>x.id===id));
       return;
     }
-    // Excluir
     if(e.target.closest("[data-del-mot]")){
       const id = e.target.closest("[data-del-mot]").dataset.delMot;
       if(confirm("Excluir este motorista?")){
@@ -391,7 +405,6 @@ export async function renderMotoristas(view){
   Store.watch("motoristas", lista=>{
     const q = ($("#mot-search")?.value||"").toLowerCase();
     const filtrada = q ? lista.filter(m=>(m.nome+m.contato+m.vinculo).toLowerCase().includes(q)) : lista;
-
     tbody.innerHTML = filtrada.map(m=>`
       <tr>
         <td><strong>${esc(m.nome)}</strong></td>
@@ -410,7 +423,6 @@ export async function renderMotoristas(view){
       `<tr><td colspan="5" class="text-muted" style="padding:24px;text-align:center">Nenhum motorista cadastrado.</td></tr>`;
   });
 
-  // Re-busca simples: filtra no DOM
   $("#mot-search").oninput = e=>{
     const q = e.target.value.toLowerCase();
     tbody.querySelectorAll("tr").forEach(tr=>
@@ -447,11 +459,12 @@ export async function renderMotoristas(view){
           </div>
           <p style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.5">
             O motorista usa este código de 4 dígitos para entrar no app.<br>
-            Após salvar, use o botão abaixo para copiar e enviar pelo WhatsApp.
+            Preencha o contato acima e envie o PIN + link de acesso pelo WhatsApp.
           </p>
-          <button class="btn btn-ghost btn-sm" id="m-copiar-pin" type="button" style="margin-top:6px">
-            📋 Copiar mensagem para WhatsApp
-          </button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+            <button class="btn btn-primary btn-sm" id="m-wa-pin" type="button">💬 Enviar no WhatsApp</button>
+            <button class="btn btn-ghost btn-sm" id="m-copiar-pin" type="button">📋 Copiar mensagem</button>
+          </div>
         </div>
 
         <div class="form-actions">
@@ -463,19 +476,16 @@ export async function renderMotoristas(view){
     const pinInput = $("#m-pin");
     let pinVisivel = true;
 
-    // Só números, máximo 4
     pinInput.addEventListener("input", ()=>{
       pinInput.value = pinInput.value.replace(/\D/g,"").slice(0,4);
     });
 
-    // Mostrar / ocultar
     $("#m-ver-pin").addEventListener("click", ()=>{
       pinVisivel = !pinVisivel;
       pinInput.type = pinVisivel ? "text" : "password";
       $("#m-ver-pin").textContent = pinVisivel ? "👁️ Mostrar" : "🙈 Ocultar";
     });
 
-    // Gerar novo PIN
     $("#m-gerar-pin").addEventListener("click", ()=>{
       pinInput.value = pinAleatorio();
       pinInput.type  = "text";
@@ -484,21 +494,32 @@ export async function renderMotoristas(view){
       toast("Novo PIN gerado — salve para confirmar");
     });
 
-    // Copiar para WhatsApp
-    $("#m-copiar-pin").addEventListener("click", ()=>{
+    function montarMensagem(){
       const nome = $("#m-nome").value.trim() || "Motorista";
       const pin  = pinInput.value.trim();
-      if(!/^\d{4}$/.test(pin)){ toast("Gere ou informe um PIN válido antes de copiar", true); return; }
-      const txt = `Olá ${nome}! Seu PIN de acesso ao app MedConnect é: *${pin}*`;
+      if(!/^\d{4}$/.test(pin)){ toast("Gere ou informe um PIN válido antes de enviar", true); return null; }
+      const link = new URL("motorista.html", location.href).href;
+      return `Olá ${nome}! 👋\n\nSeu acesso ao App do Motorista MedConnect:\n\n🔗 Link: ${link}\n🔐 PIN: *${pin}*\n\nÉ só abrir o link e digitar o PIN para entrar. Bom trabalho! 🚚`;
+    }
+
+    $("#m-wa-pin").addEventListener("click", ()=>{
+      const txt = montarMensagem();
+      if(!txt) return;
+      const fone = ($("#m-cont").value||"").replace(/\D/g,"");
+      const numero = fone ? (fone.length <= 11 ? "55"+fone : fone) : "";
+      window.open(`https://wa.me/${numero}?text=${encodeURIComponent(txt)}`, "_blank");
+    });
+
+    $("#m-copiar-pin").addEventListener("click", ()=>{
+      const txt = montarMensagem();
+      if(!txt) return;
       navigator.clipboard?.writeText(txt)
         .then(()=> toast("Mensagem copiada — cole no WhatsApp ✓"))
         .catch(()=> prompt("Copie e envie ao motorista:", txt));
     });
 
-    // Cancelar
     $("#m-cancel").addEventListener("click", closeModal);
 
-    // Salvar
     $("#m-save").addEventListener("click", async ()=>{
       const nome = $("#m-nome").value.trim();
       const pin  = pinInput.value.trim();
@@ -507,11 +528,7 @@ export async function renderMotoristas(view){
       const todos     = await Store.list("motoristas");
       const duplicado = todos.find(x=> x.pin === pin && x.id !== m.id);
       if(duplicado) return toast(`PIN ${pin} já está em uso por ${duplicado.nome}`, true);
-
-      const data = {
-        nome, contato: $("#m-cont").value.trim(),
-        vinculo: $("#m-vinc").value, pin
-      };
+      const data = { nome, contato: $("#m-cont").value.trim(), vinculo: $("#m-vinc").value, pin };
       if(m.id) await Store.update("motoristas", m.id, data);
       else     await Store.add("motoristas", data);
       closeModal();
