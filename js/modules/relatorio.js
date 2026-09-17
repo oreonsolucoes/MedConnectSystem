@@ -11,6 +11,7 @@ export async function abrirRelatorioCliente(cliente){
   document.getElementById("rel-overlay")?.remove();
 
   const hoje = new Date().toISOString().slice(0,10);
+  const umAnoFuturo = new Date(Date.now() + 365*24*60*60*1000).toISOString().slice(0,10);
   const tresM = new Date(Date.now() - 90*24*60*60*1000).toISOString().slice(0,10);
 
   const overlay = document.createElement("div");
@@ -34,7 +35,7 @@ export async function abrirRelatorioCliente(cliente){
         </div>
         <div style="display:flex;flex-direction:column;gap:5px">
           <label style="font-size:12px;font-weight:700;color:#64748b">DATA FINAL</label>
-          <input type="date" id="rel-fim" value="${hoje}" style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px">
+          <input type="date" id="rel-fim" value="${umAnoFuturo}" style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px">
         </div>
         <button id="rel-buscar" style="background:#0d4f8b;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">🔍 Buscar</button>
         <div style="margin-left:auto;display:flex;gap:8px">
