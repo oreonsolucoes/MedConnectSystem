@@ -67,7 +67,7 @@ export async function renderClientes(view){
         <div class="field full"><label>Nome</label><input id="f-nome" value="${esc(c.nome||"")}"></div>
         <div class="field"><label>Tipo de documento</label>
           <select id="f-doc"><option ${c.doc==="CPF"?"selected":""}>CPF</option><option ${c.doc==="CNPJ"?"selected":""}>CNPJ</option></select></div>
-        <div class="field"><label>Número do documento</label><input id="f-documento" value="${esc(c.documento||"")}" placeholder="000.000.000-00"></div>
+        <div class="field"><label>Número do documento</label><input id="f-documento" value="${esc(c.documento||"")}" placeholder="000.000.000-00" maxlength="18"></div>
 
         <!-- Busca de CEP -->
         <div class="field full" style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px">
@@ -103,6 +103,33 @@ export async function renderClientes(view){
           <button class="btn btn-primary" id="c-save">Salvar</button>
         </div>
       </div>`);
+
+    // Máscara CPF/CNPJ
+    function aplicarMascaraDoc(){
+      const tipo = $("#f-doc").value;
+      const campo = $("#f-documento");
+      let v = campo.value.replace(/\D/g,"");
+      if(tipo === "CPF"){
+        v = v.slice(0,11);
+        if(v.length>9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,"$1.$2.$3-$4");
+        else if(v.length>6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/,"$1.$2.$3");
+        else if(v.length>3) v = v.replace(/(\d{3})(\d{0,3})/,"$1.$2");
+        campo.placeholder = "000.000.000-00";
+        campo.maxLength = 14;
+      } else {
+        v = v.slice(0,14);
+        if(v.length>12) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/,"$1.$2.$3/$4-$5");
+        else if(v.length>8) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{0,4})/,"$1.$2.$3/$4");
+        else if(v.length>5) v = v.replace(/(\d{2})(\d{3})(\d{0,3})/,"$1.$2.$3");
+        else if(v.length>2) v = v.replace(/(\d{2})(\d{0,3})/,"$1.$2");
+        campo.placeholder = "00.000.000/0000-00";
+        campo.maxLength = 18;
+      }
+      campo.value = v;
+    }
+    $("#f-documento").oninput = aplicarMascaraDoc;
+    $("#f-doc").onchange = ()=>{ $("#f-documento").value=""; aplicarMascaraDoc(); };
+    aplicarMascaraDoc(); // aplica ao abrir (caso seja edição)
 
     // Formata CEP
     $("#f-cep").oninput = e=>{
