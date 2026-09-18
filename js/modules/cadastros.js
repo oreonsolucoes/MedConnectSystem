@@ -145,19 +145,40 @@ export async function renderClientes(view){
       e.target.value = v;
     };
 
-    // Busca CEP via ViaCEP
+    // Busca CEP — tenta múltiplas APIs em cascata
+    async function buscarCep(cep){
+      // 1) BrasilAPI
+      try{
+        const r = await fetch(`https://brasilapi.com.br/api/cep/v1/${cep}`);
+        if(r.ok){ const d = await r.json();
+          if(d.street||d.city) return { rua:d.street||"", bairro:d.neighborhood||"", cidade:d.city||"", estado:d.state||"" }; }
+      }catch(_){}
+      // 2) ViaCEP
+      try{
+        const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        if(r.ok){ const d = await r.json();
+          if(!d.erro) return { rua:d.logradouro||"", bairro:d.bairro||"", cidade:d.localidade||"", estado:d.uf||"" }; }
+      }catch(_){}
+      // 3) OpenCEP
+      try{
+        const r = await fetch(`https://opencep.com/v1/${cep}`);
+        if(r.ok){ const d = await r.json();
+          if(d.logradouro||d.localidade) return { rua:d.logradouro||"", bairro:d.bairro||"", cidade:d.localidade||"", estado:d.uf||"" }; }
+      }catch(_){}
+      return null;
+    }
+
     $("#btn-cep").onclick = async()=>{
       const cep = $("#f-cep").value.replace(/\D/g,"");
       if(cep.length!==8){ toast("CEP inválido — deve ter 8 dígitos",true); return; }
       $("#cep-status").textContent = "Buscando...";
       try{
-        const r = await fetch(`https://brasilapi.com.br/api/cep/v1/${cep}`);
-        if(!r.ok){ toast("CEP não encontrado",true); $("#cep-status").textContent=""; return; }
-        const d = await r.json();
-        $("#f-rua").value    = d.street||"";
-        $("#f-bairro").value = d.neighborhood||"";
-        $("#f-cidade").value = d.city||"";
-        $("#f-estado").value = d.state||"";
+        const end = await buscarCep(cep);
+        if(!end){ toast("CEP não encontrado",true); $("#cep-status").textContent=""; return; }
+        $("#f-rua").value    = end.rua;
+        $("#f-bairro").value = end.bairro;
+        $("#f-cidade").value = end.cidade;
+        $("#f-estado").value = end.estado;
         montarEnderecoCompleto();
         $("#cep-status").textContent = "✓ Endereço encontrado";
         setTimeout(()=>$("#cep-status").textContent="", 3000);
