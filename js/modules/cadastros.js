@@ -165,6 +165,18 @@ export async function renderClientes(view){
         if(r.ok){ const d = await r.json();
           if(d.logradouro||d.localidade) return { rua:d.logradouro||"", bairro:d.bairro||"", cidade:d.localidade||"", estado:d.uf||"" }; }
       }catch(_){}
+      // 4) AwesomeAPI
+      try{
+        const r = await fetch(`https://cep.awesomeapi.com.br/json/${cep}`);
+        if(r.ok){ const d = await r.json();
+          if(d.address||d.city) return { rua:d.address||"", bairro:d.district||"", cidade:d.city||"", estado:d.state||"" }; }
+      }catch(_){}
+      // 5) Postmon
+      try{
+        const r = await fetch(`https://api.postmon.com.br/v1/cep/${cep}`);
+        if(r.ok){ const d = await r.json();
+          if(d.logradouro||d.cidade) return { rua:d.logradouro||"", bairro:d.bairro||"", cidade:d.cidade||"", estado:d.estado||"" }; }
+      }catch(_){}
       return null;
     }
 
