@@ -97,6 +97,7 @@ export async function renderClientes(view){
         <div class="field full"><label>Restrições (acesso, elevador...)</label>
           <input id="f-rest" value="${esc(c.restricoes||"")}"></div>
         <div class="field"><label>Telefone / WhatsApp</label><input id="f-tel" value="${esc(c.telefone||"")}"></div>
+        <div class="field"><label>E-mail</label><input id="f-email" type="email" value="${esc(c.email||"")}" placeholder="contato@email.com"></div>
         <div class="field"><label>Horário de funcionamento</label><input id="f-hor" value="${esc(c.horario||"")}"></div>
         <div class="form-actions">
           <button class="btn btn-ghost" id="c-cancel">Cancelar</button>
@@ -192,6 +193,7 @@ export async function renderClientes(view){
         espaco:     $("#f-esp").value.trim(),
         restricoes: $("#f-rest").value.trim(),
         telefone:   $("#f-tel").value.trim(),
+        email:      $("#f-email").value.trim(),
         horario:    $("#f-hor").value.trim()
       };
       if(!data.nome) return toast("Informe o nome", true);
