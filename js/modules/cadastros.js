@@ -151,13 +151,13 @@ export async function renderClientes(view){
       if(cep.length!==8){ toast("CEP inválido — deve ter 8 dígitos",true); return; }
       $("#cep-status").textContent = "Buscando...";
       try{
-        const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const r = await fetch(`https://brasilapi.com.br/api/cep/v1/${cep}`);
+        if(!r.ok){ toast("CEP não encontrado",true); $("#cep-status").textContent=""; return; }
         const d = await r.json();
-        if(d.erro){ toast("CEP não encontrado",true); $("#cep-status").textContent=""; return; }
-        $("#f-rua").value    = d.logradouro||"";
-        $("#f-bairro").value = d.bairro||"";
-        $("#f-cidade").value = d.localidade||"";
-        $("#f-estado").value = d.uf||"";
+        $("#f-rua").value    = d.street||"";
+        $("#f-bairro").value = d.neighborhood||"";
+        $("#f-cidade").value = d.city||"";
+        $("#f-estado").value = d.state||"";
         montarEnderecoCompleto();
         $("#cep-status").textContent = "✓ Endereço encontrado";
         setTimeout(()=>$("#cep-status").textContent="", 3000);
