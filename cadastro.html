@@ -203,7 +203,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, doc, getDoc, addDoc, updateDoc, serverTimestamp }
+    import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, serverTimestamp }
       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const cfg = {
@@ -355,6 +355,20 @@
           conviteToken:      token,
           criadoEm:          serverTimestamp()
         };
+
+        /* ── Bloqueia CPF/CNPJ duplicado ── */
+        const docNorm = doc.replace(/\D/g,"");
+        if(docNorm){
+          const todosSnap = await getDocs(collection(db,"clientes"));
+          const dup = todosSnap.docs.find(d => ((d.data().documento)||"").replace(/\D/g,"") === docNorm);
+          if(dup){
+            show("tela-erro");
+            el("tela-erro").textContent = `⚠️ ${el("f-doc").value} já cadastrado para outro cliente. Entre em contato com a MedConnect.`;
+            el("tela-erro").scrollIntoView({behavior:"smooth",block:"center"});
+            btn.disabled=false; btn.textContent="✅ Enviar cadastro";
+            return;
+          }
+        }
 
         try {
           await addDoc(collection(db,"clientes"), cliente);
