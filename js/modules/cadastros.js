@@ -37,7 +37,7 @@ export async function renderClientes(view){
           <tr>
             <td><strong>${esc(c.nome)}</strong></td>
             <td class="mono" style="font-size:12px;color:#64748b">${esc(c.doc||"")} ${esc(c.documento||"—")}</td>
-            <td>${esc(c.telefone||"—")}<br><span class="text-muted" style="font-size:11px">${esc(c.horario||"")}</span></td>
+            <td>${esc(c.telefone||"—")}${c.email?`<br><span class="text-muted" style="font-size:11px">${esc(c.email)}</span>`:""}<br><span class="text-muted" style="font-size:11px">${esc(c.horario||"")}</span></td>
             <td style="max-width:280px;font-size:12.5px">${esc(c.endComercial||"—")}</td>
             <td>${esc(c.voltagem||"—")}</td>
             <td class="text-right" style="white-space:nowrap">
@@ -69,6 +69,10 @@ export async function renderClientes(view){
           <select id="f-doc"><option ${c.doc==="CPF"?"selected":""}>CPF</option><option ${c.doc==="CNPJ"?"selected":""}>CNPJ</option></select></div>
         <div class="field"><label>Número do documento</label><input id="f-documento" value="${esc(c.documento||"")}" placeholder="000.000.000-00" maxlength="18"></div>
 
+        <div class="field"><label>Telefone / WhatsApp</label><input id="f-tel" value="${esc(c.telefone||"")}"></div>
+        <div class="field"><label>E-mail</label><input id="f-email" type="email" value="${esc(c.email||"")}" placeholder="contato@email.com"></div>
+        <div class="field"><label>Horário de funcionamento</label><input id="f-hor" value="${esc(c.horario||"")}"></div>
+
         <!-- Busca de CEP -->
         <div class="field full" style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px">
           <label style="color:var(--brand);font-size:13px;font-weight:700">📍 Endereço via CEP</label>
@@ -92,13 +96,15 @@ export async function renderClientes(view){
           <input id="f-res" value="${esc(c.endResidencial||"")}"></div>
 
         <div class="field"><label>Voltagem do local</label>
-          <input id="f-volt" value="${esc(c.voltagem||"")}" placeholder="110V / 220V"></div>
-        <div class="field"><label>Espaço físico</label><input id="f-esp" value="${esc(c.espaco||"")}"></div>
+          <select id="f-volt">
+            <option value="">Selecione...</option>
+            <option value="110V" ${c.voltagem==="110V"?"selected":""}>110V</option>
+            <option value="220V" ${c.voltagem==="220V"?"selected":""}>220V</option>
+            <option value="Ambas" ${c.voltagem==="Ambas"?"selected":""}>Ambas (110V e 220V)</option>
+          </select></div>
+        <div class="field"><label>Espaço para mesa do equipamento</label><input id="f-esp" value="${esc(c.espaco||"")}" placeholder="Ex.: sala ampla, consultório 12m²"></div>
         <div class="field full"><label>Restrições (acesso, elevador...)</label>
           <input id="f-rest" value="${esc(c.restricoes||"")}"></div>
-        <div class="field"><label>Telefone / WhatsApp</label><input id="f-tel" value="${esc(c.telefone||"")}"></div>
-        <div class="field"><label>E-mail</label><input id="f-email" type="email" value="${esc(c.email||"")}" placeholder="contato@email.com"></div>
-        <div class="field"><label>Horário de funcionamento</label><input id="f-hor" value="${esc(c.horario||"")}"></div>
         <div class="form-actions">
           <button class="btn btn-ghost" id="c-cancel">Cancelar</button>
           <button class="btn btn-primary" id="c-save">Salvar</button>
@@ -134,8 +140,8 @@ export async function renderClientes(view){
 
     // Formata CEP
     $("#f-cep").oninput = e=>{
-      let v = e.target.value.replace(/\D/g,"");
-      if(v.length>5) v = v.slice(0,5)+"-"+v.slice(5,8);
+      let v = e.target.value.replace(/\D/g,"").slice(0,8);
+      if(v.length>5) v = v.slice(0,5)+"-"+v.slice(5);
       e.target.value = v;
     };
 
@@ -189,7 +195,7 @@ export async function renderClientes(view){
         estado:     $("#f-estado").value.trim(),
         endComercial: $("#f-com").value.trim(),
         endResidencial:$("#f-res").value.trim(),
-        voltagem:   $("#f-volt").value.trim(),
+        voltagem:   $("#f-volt").value,
         espaco:     $("#f-esp").value.trim(),
         restricoes: $("#f-rest").value.trim(),
         telefone:   $("#f-tel").value.trim(),
