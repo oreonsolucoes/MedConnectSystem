@@ -75,6 +75,17 @@ const PASSOS = [
 
 let passoAtual = 0;
 let navegar = null;
+let PASSOS_FILTRADOS = PASSOS; // passos visíveis para o usuário atual
+
+/* Filtra os passos conforme perfil do usuário */
+function filtrarPassos(user){
+  if(!user || user.perfil === "admin") return PASSOS;
+  if(user.perfil === "motorista") return PASSOS.filter(p => p.rota === "romaneio");
+  const modulos = user.modulos || [];
+  // Rotas que sempre aparecem + rotas liberadas pelo perfil operacional
+  const SEMPRE = ["dashboard"]; // dashboard é soAdmin mas incluímos a descrição no tour mesmo assim? Não — omitir tbm
+  return PASSOS.filter(p => modulos.includes(p.rota));
+}
 
 /* ===================== ESTILOS ===================== */
 function injetarEstilos(){
@@ -156,8 +167,9 @@ function injetarEstilos(){
 }
 
 /* ===================== TELA DE BOAS-VINDAS ===================== */
-export function abrirBoasVindas(navegarFn){
+export function abrirBoasVindas(navegarFn, user){
   navegar = navegarFn;
+  PASSOS_FILTRADOS = filtrarPassos(user);
   injetarEstilos();
   fecharTudo();
 
@@ -172,7 +184,7 @@ export function abrirBoasVindas(navegarFn){
       </div>
       <div class="bv-body">
         <div class="bv-grid">
-          ${PASSOS.map((p,i)=>`
+          ${PASSOS_FILTRADOS.map((p,i)=>`
             <div class="bv-card" data-passo="${i}">
               <div class="bv-ico">${p.ico}</div>
               <h4>${p.titulo}</h4>
@@ -190,21 +202,22 @@ export function abrirBoasVindas(navegarFn){
 
   overlay.querySelectorAll(".bv-card").forEach(c=> c.onclick=()=>{
     fecharTudo();
-    navegar(PASSOS[+c.dataset.passo].rota);
+    navegar(PASSOS_FILTRADOS[+c.dataset.passo].rota);
   });
 
   document.getElementById("tour-pular-bv").onclick = fecharTudo;
   document.getElementById("tour-comecar").onclick = ()=>{
     fecharTudo();
-    setTimeout(()=> iniciarTour(navegarFn), 200);
+    setTimeout(()=> iniciarTour(navegarFn, user), 200);
   };
 
   overlay.onclick = e=>{ if(e.target===overlay) fecharTudo(); };
 }
 
 /* ===================== TOUR GUIADO ===================== */
-function iniciarTour(navegarFn){
+function iniciarTour(navegarFn, user){
   navegar = navegarFn;
+  PASSOS_FILTRADOS = filtrarPassos(user);
   passoAtual = 0;
   injetarEstilos();
   document.getElementById("app-shell")?.classList.remove("collapsed");
@@ -213,7 +226,7 @@ function iniciarTour(navegarFn){
 
 function mostrarPasso(){
   fecharBalao();
-  const p = PASSOS[passoAtual];
+  const p = PASSOS_FILTRADOS[passoAtual];
   navegar(p.rota);
 
   const bd = document.createElement("div");
@@ -257,11 +270,11 @@ function posicionarBalaoCenter(p){
 function criarBalao(p){
   const balao = document.createElement("div");
   balao.id = "tour-balao";
-  const ehUltimo = passoAtual === PASSOS.length - 1;
+  const ehUltimo = passoAtual === PASSOS_FILTRADOS.length - 1;
   balao.innerHTML = `
     <button class="tb-fechar" id="tour-fechar-balao">×</button>
     <div class="tb-ico">${p.ico}</div>
-    <div class="tb-prog">Passo ${passoAtual+1} de ${PASSOS.length}</div>
+    <div class="tb-prog">Passo ${passoAtual+1} de ${PASSOS_FILTRADOS.length}</div>
     <h3>${p.titulo}</h3>
     <p>${p.desc}</p>
     <div class="tb-btns">
@@ -274,7 +287,7 @@ function criarBalao(p){
   const prog = document.createElement("div");
   prog.style.cssText = `height:3px;background:#e2e8f0;border-radius:3px;margin-bottom:16px;overflow:hidden`;
   const fill = document.createElement("div");
-  fill.style.cssText = `height:100%;background:#0d4f8b;border-radius:3px;width:${((passoAtual+1)/PASSOS.length)*100}%;transition:.3s`;
+  fill.style.cssText = `height:100%;background:#0d4f8b;border-radius:3px;width:${((passoAtual+1)/PASSOS_FILTRADOS.length)*100}%;transition:.3s`;
   prog.appendChild(fill);
   balao.insertBefore(prog, balao.querySelector(".tb-ico"));
 
