@@ -26,7 +26,7 @@ const PASSOS = [
   {
     rota: "clientes",
     titulo: "Clientes",
-    desc: "Cadastro completo: nome da clínica, CPF/CNPJ, responsável, endereço com busca por CEP, voltagem, restrições de acesso, ponto de referência e espaço para mesa. Gere relatórios por período com exportação PDF e Excel.",
+    desc: "Cadastro completo com CPF/CNPJ (máscara automática e bloqueio de duplicatas), endereço via CEP, voltagem, restrições de acesso e horário de funcionamento. O sistema impede cadastrar o mesmo documento duas vezes. Gere relatórios por período com exportação PDF e Excel.",
     ico: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`
   },
   {
@@ -58,6 +58,18 @@ const PASSOS = [
     titulo: "Financeiro",
     desc: "Receitas, despesas, margem de lucro e inadimplência. Todas as comissões de responsáveis, custos de motoristas e fornecedores entram automaticamente no cálculo. Acompanhe o fluxo real do negócio.",
     ico: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`
+  },
+  {
+    rota: "convites",
+    titulo: "Convites",
+    desc: "Gere links de auto-cadastro para novos clientes preencherem os próprios dados (nome, CNPJ/CPF, endereço, responsável). O sistema bloqueia o envio se o documento já estiver cadastrado, evitando duplicatas.",
+    ico: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`
+  },
+  {
+    rota: "usuarios",
+    titulo: "Usuários",
+    desc: "Administração de acessos ao sistema. Crie usuários com perfil Administrador, Operacional (acesso apenas aos módulos selecionados) ou Motorista. Cada perfil vê só o que precisa — sem expor dados desnecessários.",
+    ico: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><path d="M18 14l2 2 4-4" stroke-width="2.5"/></svg>`
   }
 ];
 
