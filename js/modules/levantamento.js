@@ -1,9 +1,11 @@
 /* ===================================================================
    Módulo: Levantamento (Entradas × Saídas)
    - Filtro de período dinâmico (início / fim) via calendário
+   - Filtro por tecnologia
    - Dashboard de custo, receita, lucro e margem
    - Gráfico: comparativo mensal (receita × custo × lucro) estilo BI
    - Gráfico: clientes com maior receita no período
+   - Gráfico: clientes com mais locações no período
    - Gráfico: maiores custos (motoristas, sublocação, técnica, despesas…)
    - Exportação em PDF (via impressão do navegador — "Salvar como PDF")
    =================================================================== */
@@ -136,6 +138,9 @@ export async function render(view){
   const ini0 = datas[0] || hoje.slice(0,8)+"01";
   const fim0 = datas[datas.length-1] || hoje;
 
+  // Monta lista de tecnologias únicas para o select
+  const tecnologias = [...new Set(locacoes.map(l=>l.tecnologia).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+
   view.innerHTML = `
     <div class="page-head">
       <div><h2>Levantamento</h2><p class="sub">Entradas × saídas, custos e lucros por período</p></div>
@@ -151,6 +156,13 @@ export async function render(view){
         <div class="field" style="margin:0">
           <label>Fim do período</label>
           <input type="date" id="lev-fim" value="${fim0}">
+        </div>
+        <div class="field" style="margin:0">
+          <label>Tecnologia</label>
+          <select id="lev-tec" class="btn btn-ghost" style="height:38px">
+            <option value="">Todas</option>
+            ${tecnologias.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join("")}
+          </select>
         </div>
         <button class="btn btn-primary" id="lev-aplicar">Aplicar</button>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
@@ -169,9 +181,15 @@ export async function render(view){
       <div class="panel-body flush"><div id="lev-mensal"></div></div>
     </div>
 
-    <div class="panel">
-      <div class="panel-head"><h3>Clientes com mais locações no período</h3></div>
-      <div class="panel-body flush"><div id="lev-clientes"></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px" id="lev-clientes-grid">
+      <div class="panel" style="margin:0">
+        <div class="panel-head"><h3>Clientes com maior receita</h3></div>
+        <div class="panel-body flush"><div id="lev-clientes-receita"></div></div>
+      </div>
+      <div class="panel" style="margin:0">
+        <div class="panel-head"><h3>Clientes com mais locações</h3></div>
+        <div class="panel-body flush"><div id="lev-clientes-qtd"></div></div>
+      </div>
     </div>
 
     <div class="panel">
@@ -182,18 +200,24 @@ export async function render(view){
     <div class="panel">
       <div class="panel-head"><h3>Entradas × Saídas (detalhe)</h3></div>
       <div class="panel-body flush"><div id="lev-detalhe"></div></div>
-    </div>`;
+    </div>
+
+    <style>
+      @media(max-width:640px){ #lev-clientes-grid{ grid-template-columns:1fr !important; } }
+    </style>`;
 
   const $ini = view.querySelector("#lev-ini");
   const $fim = view.querySelector("#lev-fim");
+  const $tec = view.querySelector("#lev-tec");
   let ultimo = null; // guarda snapshot p/ o PDF
 
   function calcular(){
     let ini = $ini.value, fim = $fim.value;
     if(ini && fim && ini > fim){ [ini,fim] = [fim,ini]; $ini.value=ini; $fim.value=fim; }
+    const tec = $tec.value;
     const dentro = d => (!ini || d >= ini) && (!fim || d <= fim);
 
-    const locPeriodo  = locacoes.filter(l => dentro(l.data));
+    const locPeriodo  = locacoes.filter(l => dentro(l.data) && (!tec || l.tecnologia===tec));
     const despPeriodo = despesas.filter(d => dentro(d.venc));
 
     const receita  = locPeriodo.reduce((s,l)=> s+(Number(l.valorCliente)||0), 0);
@@ -219,11 +243,17 @@ export async function render(view){
     const meses = agruparMensal(locPeriodo, despPeriodo);
     view.querySelector("#lev-mensal").innerHTML = graficoMensal(meses);
 
+    // Clientes por receita
+    const porClienteReceita = {};
+    locPeriodo.forEach(l=>{ const n=l.cliente||"—"; porClienteReceita[n]=(porClienteReceita[n]||0)+(Number(l.valorCliente)||0); });
+    const clientesReceitaRank = Object.entries(porClienteReceita).map(([label,valor])=>({label,valor})).sort((a,b)=>b.valor-a.valor).slice(0,10);
+    view.querySelector("#lev-clientes-receita").innerHTML = barras(clientesReceitaRank, ()=>"var(--ok)");
+
     // Clientes por quantidade de locações
-    const porCliente = {};
-    locPeriodo.forEach(l=>{ const n=l.cliente||"—"; porCliente[n]=(porCliente[n]||0)+1; });
-    const clientesRank = Object.entries(porCliente).map(([label,valor])=>({label,valor})).sort((a,b)=>b.valor-a.valor).slice(0,10);
-    view.querySelector("#lev-clientes").innerHTML = barras(clientesRank, ()=>"var(--brand)", v=>`${v} loc.`);
+    const porClienteQtd = {};
+    locPeriodo.forEach(l=>{ const n=l.cliente||"—"; porClienteQtd[n]=(porClienteQtd[n]||0)+1; });
+    const clientesQtdRank = Object.entries(porClienteQtd).map(([label,valor])=>({label,valor})).sort((a,b)=>b.valor-a.valor).slice(0,10);
+    view.querySelector("#lev-clientes-qtd").innerHTML = barras(clientesQtdRank, ()=>"var(--brand)", v=>`${v} loc.`);
 
     // Custos por categoria
     const custosRank = Object.entries(custoCat).map(([label,valor])=>({label,valor})).filter(i=>i.valor>0).sort((a,b)=>b.valor-a.valor);
@@ -257,7 +287,7 @@ export async function render(view){
       ${despPeriodo.length?`<div style="padding:12px 18px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)">
         + Despesas do período (vencimento): <strong style="color:var(--danger)">${BRL(custoCat.Despesas)}</strong></div>`:""}`;
 
-    ultimo = { ini, fim, receita, recebido, aReceber, custoCat, custoTotal, lucro, margem, meses, clientesRank, custosRank, linhas };
+    ultimo = { ini, fim, receita, recebido, aReceber, custoCat, custoTotal, lucro, margem, meses, clientesReceitaRank, clientesQtdRank, custosRank, linhas };
   }
 
   /* ---------------- Exportação PDF (via impressão do navegador) ---------------- */
@@ -326,6 +356,7 @@ export async function render(view){
   garantirEstiloImpressao();
 
   view.querySelector("#lev-aplicar").onclick = calcular;
+  view.querySelector("#lev-tec").onchange = calcular;
   view.querySelector("#lev-pdf").onclick = exportarPDF;
   view.querySelectorAll("[data-atalho]").forEach(b=> b.onclick = ()=>{
     const now = new Date();
