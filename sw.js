@@ -5,7 +5,7 @@
    - Background Sync → retoma uploads pendentes quando conexão volta
    =================================================================== */
 
-const CACHE_VERSION = "mc-v6";
+const CACHE_VERSION = "mc-v7";
 const CACHE_NAME    = `medconnect-${CACHE_VERSION}`;
 
 const STATIC_FILES = [
