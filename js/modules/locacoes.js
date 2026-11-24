@@ -30,6 +30,8 @@ export async function render(view){
       <select id="filtro-motorista" class="btn btn-ghost">
         <option value="">Todos os motoristas</option>
       </select>
+      <input type="date" id="filtro-ini" class="btn btn-ghost" title="Data inicial" style="cursor:pointer">
+      <input type="date" id="filtro-fim" class="btn btn-ghost" title="Data final" style="cursor:pointer">
       <button class="btn btn-ghost" id="btn-export">⬇️ Excel</button>
     </div>
     <div class="panel"><div class="panel-body flush" id="list"></div></div>`;
@@ -94,20 +96,26 @@ export async function render(view){
     let listaAtual = lista;
     draw(lista);   // render inicial
     const applyFilters = ()=>{
-      const q  = $("#search").value.toLowerCase();
-      const fr = $("#filtro-frota").value;
-      const st = $("#filtro-status").value;
-      const mo = $("#filtro-motorista").value;
+      const q   = $("#search").value.toLowerCase();
+      const fr  = $("#filtro-frota").value;
+      const st  = $("#filtro-status").value;
+      const mo  = $("#filtro-motorista").value;
+      const ini = $("#filtro-ini").value;
+      const fim = $("#filtro-fim").value;
       listaAtual = lista.filter(l =>
         (l.cliente+l.tecnologia+(l.responsavel||"")+(l.motorista||"")).toLowerCase().includes(q) &&
         (!fr || l.frota===fr) && (!st || l.statusPgto===st) &&
-        (!mo || l.motoristaId===mo));
+        (!mo || l.motoristaId===mo) &&
+        (!ini || (l.data||"") >= ini) &&
+        (!fim || (l.data||"") <= fim));
       draw(listaAtual);
     };
     $("#search").oninput = applyFilters;
     $("#filtro-frota").onchange = applyFilters;
     $("#filtro-status").onchange = applyFilters;
     $("#filtro-motorista").onchange = applyFilters;
+    $("#filtro-ini").onchange = applyFilters;
+    $("#filtro-fim").onchange = applyFilters;
 
     $("#btn-export").onclick = ()=>{
       const sel = $("#filtro-motorista");
