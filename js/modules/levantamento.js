@@ -193,6 +193,11 @@ export async function render(view){
     </div>
 
     <div class="panel">
+      <div class="panel-head"><h3>Ranking de clientes no período</h3></div>
+      <div class="panel-body flush"><div id="lev-ranking"></div></div>
+    </div>
+
+    <div class="panel">
       <div class="panel-head"><h3>Maiores custos no período</h3></div>
       <div class="panel-body flush"><div id="lev-custos"></div></div>
     </div>
@@ -254,6 +259,46 @@ export async function render(view){
     locPeriodo.forEach(l=>{ const n=l.cliente||"—"; porClienteQtd[n]=(porClienteQtd[n]||0)+1; });
     const clientesQtdRank = Object.entries(porClienteQtd).map(([label,valor])=>({label,valor})).sort((a,b)=>b.valor-a.valor).slice(0,10);
     view.querySelector("#lev-clientes-qtd").innerHTML = barras(clientesQtdRank, ()=>"var(--brand)", v=>`${v} loc.`);
+
+    // Ranking detalhado de clientes
+    const rankMap = {};
+    locPeriodo.forEach(l=>{
+      const n = l.cliente||"—";
+      if(!rankMap[n]) rankMap[n] = { qtd:0, receita:0, pago:0, aReceber:0 };
+      rankMap[n].qtd++;
+      const v = Number(l.valorCliente)||0;
+      rankMap[n].receita += v;
+      if(l.statusPgto==="Pago") rankMap[n].pago += v;
+      else rankMap[n].aReceber += v;
+    });
+    const rankList = Object.entries(rankMap)
+      .map(([nome, d])=>({ nome, ...d, ticket: d.qtd ? d.receita/d.qtd : 0 }))
+      .sort((a,b)=> b.qtd - a.qtd || b.receita - a.receita);
+
+    view.querySelector("#lev-ranking").innerHTML = rankList.length ? `
+      <div class="table-wrap"><table class="data">
+        <thead><tr>
+          <th style="width:36px">#</th>
+          <th>Cliente</th>
+          <th class="text-center">Locações</th>
+          <th class="text-right">Receita total</th>
+          <th class="text-right">Ticket médio</th>
+          <th class="text-right" style="color:var(--ok)">Pago</th>
+          <th class="text-right" style="color:var(--warn)">A receber</th>
+        </tr></thead>
+        <tbody>${rankList.map((r,i)=>`
+          <tr>
+            <td class="mono text-muted" style="font-size:12px">${i+1}</td>
+            <td><strong>${esc(r.nome)}</strong></td>
+            <td class="text-center"><span class="badge badge-info">${r.qtd} loc.</span></td>
+            <td class="text-right mono">${BRL(r.receita)}</td>
+            <td class="text-right mono text-muted">${BRL(r.ticket)}</td>
+            <td class="text-right mono" style="color:var(--ok)">${r.pago?BRL(r.pago):"—"}</td>
+            <td class="text-right mono" style="color:${r.aReceber?"var(--warn)":"var(--muted)"}">${r.aReceber?BRL(r.aReceber):"—"}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table></div>` :
+      `<div class="panel-body text-muted" style="text-align:center">Sem dados no período.</div>`;
 
     // Custos por categoria
     const custosRank = Object.entries(custoCat).map(([label,valor])=>({label,valor})).filter(i=>i.valor>0).sort((a,b)=>b.valor-a.valor);
