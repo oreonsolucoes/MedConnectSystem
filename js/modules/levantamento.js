@@ -170,7 +170,7 @@ export async function render(view){
     </div>
 
     <div class="panel">
-      <div class="panel-head"><h3>Clientes com maior receita no período</h3></div>
+      <div class="panel-head"><h3>Clientes com mais locações no período</h3></div>
       <div class="panel-body flush"><div id="lev-clientes"></div></div>
     </div>
 
@@ -219,11 +219,11 @@ export async function render(view){
     const meses = agruparMensal(locPeriodo, despPeriodo);
     view.querySelector("#lev-mensal").innerHTML = graficoMensal(meses);
 
-    // Clientes por receita
+    // Clientes por quantidade de locações
     const porCliente = {};
-    locPeriodo.forEach(l=>{ const n=l.cliente||"—"; porCliente[n]=(porCliente[n]||0)+(Number(l.valorCliente)||0); });
+    locPeriodo.forEach(l=>{ const n=l.cliente||"—"; porCliente[n]=(porCliente[n]||0)+1; });
     const clientesRank = Object.entries(porCliente).map(([label,valor])=>({label,valor})).sort((a,b)=>b.valor-a.valor).slice(0,10);
-    view.querySelector("#lev-clientes").innerHTML = barras(clientesRank, ()=>"var(--brand)");
+    view.querySelector("#lev-clientes").innerHTML = barras(clientesRank, ()=>"var(--brand)", v=>`${v} loc.`);
 
     // Custos por categoria
     const custosRank = Object.entries(custoCat).map(([label,valor])=>({label,valor})).filter(i=>i.valor>0).sort((a,b)=>b.valor-a.valor);
